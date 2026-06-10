@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/core/index.ts","./src/domain/index.ts","./src/features/index.ts","./src/infrastructure/index.ts","./src/lib/utils.ts","./src/rules/index.ts","./src/shared/index.ts","./src/shared/types/global.types.ts","./src/shared/utils/datetime.ts","./src/shared/utils/money.ts"],"version":"5.7.3"}
