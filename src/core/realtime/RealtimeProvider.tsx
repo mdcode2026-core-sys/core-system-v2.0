@@ -11,7 +11,7 @@ interface RealtimeContextValue {
 const RealtimeContext = createContext<RealtimeContextValue | undefined>(undefined);
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const channelsRef = useRef<<ReturnType<<typeof supabase.channel>[]>([]);
+  const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([]);
 
   useEffect(() => {
     return () => {

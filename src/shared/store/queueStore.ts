@@ -25,7 +25,7 @@ export interface QueueState {
 
   // Actions
   setItems: (items: QueueItem[]) => void;
-  updateItem: (sessionId: string, partial: Partial<<QueueItem>) => void;
+  updateItem: (sessionId: string, partial: Partial<QueueItem>) => void;
   removeItem: (sessionId: string) => void;
   reorderItem: (fromIndex: number, toIndex: number) => void;
   selectSession: (sessionId: string | null) => void;
@@ -35,7 +35,7 @@ export interface QueueState {
   getRedCount: () => number;
 }
 
-export const useQueueStore = create<<QueueState>()((set, get) => ({
+export const useQueueStore = create<QueueState>()((set, get) => ({
   items: [],
   selectedSessionId: null,
   isLoading: true,
@@ -57,7 +57,8 @@ export const useQueueStore = create<<QueueState>()((set, get) => ({
   reorderItem: (fromIndex, toIndex) =>
     set((state) => {
       const items = [...state.items];
-      const [moved] = items.splice(fromIndex, 1);
+        const [moved] = items.splice(fromIndex, 1) as [QueueItem | undefined];
+      if (!moved) return { items };
       items.splice(toIndex, 0, moved);
       return { items };
     }),

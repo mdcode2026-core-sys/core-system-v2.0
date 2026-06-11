@@ -14,7 +14,7 @@ export interface TransitionRequest {
   requesterId: string;
 }
 
-const VALID_TRANSITIONS: Record<<SessionStatus, SessionStatus[]> = {
+const VALID_TRANSITIONS: Record<SessionStatus, SessionStatus[]> = {
   pending: ['checked_in', 'cancelled', 'no_show'],
   checked_in: ['in_progress', 'cancelled', 'abandoned'],
   in_progress: ['completed', 'abandoned'],

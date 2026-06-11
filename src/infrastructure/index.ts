@@ -1,3 +1,3 @@
 export {}
-export { supabase, getCurrentUserWithClaims, setTenantContext } from './supabase/client';
+export { supabase, getCurrentUserWithClaims } from './supabase/client';
 export { rpc } from './supabase/rpc';

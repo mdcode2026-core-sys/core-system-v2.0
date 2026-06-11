@@ -11,7 +11,7 @@ interface PinAuthContextValue {
   lastUserId: string | null;
 }
 
-const PinAuthContext = createContext<<PinAuthContextValue | undefined>(undefined);
+const PinAuthContext = createContext<PinAuthContextValue | undefined>(undefined);
 
 export function PinAuthProvider({ children }: { children: React.ReactNode }) {
   const [isPinVerified, setIsPinVerified] = useState(false);

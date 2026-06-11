@@ -1,6 +1,8 @@
 // src/shared/types/queue.ts
 // Live queue + lock governance types
 
+import type { PatientClass } from './scoring';
+
 export type LockState = 'available' | 'held' | 'abandoned';
 
 export interface QueueCard {

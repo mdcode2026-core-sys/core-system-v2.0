@@ -21,7 +21,6 @@ export function useQueueChannel(tenantId: string) {
 
       if (eventType === 'UPDATE' && newRecord) {
         updateItem(newRecord.id as string, {
-          sessionStatus: newRecord.session_status as string,
           lockHolderId: newRecord.lock_holder_id as string | null,
           lockHolderName: newRecord.lock_holder_name as string | null,
           waitMinutes: newRecord.wait_time_minutes as number,

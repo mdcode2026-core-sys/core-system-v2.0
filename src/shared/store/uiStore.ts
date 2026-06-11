@@ -40,7 +40,7 @@ export interface UiState {
 
 let toastIdCounter = 0;
 
-export const useUiStore = create<<UiState>()((set) => ({
+export const useUiStore = create<UiState>()((set) => ({
   activeModal: null,
   modalData: null,
   toasts: [],

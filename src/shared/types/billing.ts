@@ -10,7 +10,7 @@ export interface TierLimits {
   maxDevices: number;
 }
 
-export const TIER_LIMITS: Record<<SubscriptionTier, TierLimits> = {
+export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   trial: { maxUsers: 3, maxPatients: 50, maxProceduresPerMonth: 100, maxDevices: 2 },
   essential: { maxUsers: 5, maxPatients: 100, maxProceduresPerMonth: 500, maxDevices: 2 },
   professional: { maxUsers: 15, maxPatients: 500, maxProceduresPerMonth: 2000, maxDevices: 5 },

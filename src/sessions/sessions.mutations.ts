@@ -1,8 +1,6 @@
-// src/domain/sessions/sessions.mutations.ts
-// Mutations: status transitions, score writes, lock acquire/release
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { SessionStatus } from '../../shared/types/database';
+import { supabase } from '../infrastructure/supabase/client';
+import type { SessionStatus } from '../shared/types/database';
 
 const SESSION_KEY = 'sessions';
 
@@ -16,13 +14,27 @@ export function useUpdateSessionStatus() {
       actualTimestampField?: 'actual_check_in' | 'actual_start' | 'actual_end' | 'actual_check_out';
       timestamp?: string;
     }) => {
-      // TODO: Wire to Supabase with RLS + trigger awareness
-      throw new Error('Not implemented');
+      const updates: Record<string, unknown> = {
+        session_status: payload.newStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (payload.actualTimestampField) {
+        updates[payload.actualTimestampField] = payload.timestamp ?? new Date().toISOString();
+      }
+      const { data, error } = await supabase
+        .from('clinic_visit_sessions')
+        .update(updates)
+        .eq('id', payload.sessionId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [SESSION_KEY, variables.sessionId] });
       queryClient.invalidateQueries({ queryKey: [SESSION_KEY, 'tenant'] });
       queryClient.invalidateQueries({ queryKey: [SESSION_KEY, 'doctor'] });
+      queryClient.invalidateQueries({ queryKey: [SESSION_KEY, 'queue'] });
     },
   });
 }
@@ -42,11 +54,68 @@ export function useWriteSessionScore() {
         score_rvs?: number;
       };
     }) => {
-      // TODO: Wire to Supabase (triggers ghost evaluation honeypot)
-      throw new Error('Not implemented');
+      const { data, error } = await supabase
+        .from('clinic_visit_sessions')
+        .update({
+          session_metadata: { scores: payload.indicators },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.sessionId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [SESSION_KEY, variables.sessionId] });
+    },
+  });
+}
+
+export function useAssignDoctor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { sessionId: string; doctorId: string }) => {
+      const { data, error } = await supabase
+        .from('clinic_visit_sessions')
+        .update({
+          primary_doctor_id: payload.doctorId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.sessionId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [SESSION_KEY, variables.sessionId] });
+      queryClient.invalidateQueries({ queryKey: [SESSION_KEY, 'queue'] });
+    },
+  });
+}
+
+export function useAssignRoom() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { sessionId: string; roomId: string }) => {
+      const { data, error } = await supabase
+        .from('clinic_visit_sessions')
+        .update({
+          assigned_room_id: payload.roomId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.sessionId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [SESSION_KEY, variables.sessionId] });
+      queryClient.invalidateQueries({ queryKey: [SESSION_KEY, 'queue'] });
     },
   });
 }

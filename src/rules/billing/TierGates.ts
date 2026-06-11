@@ -15,7 +15,7 @@ export type FeatureKey =
   | 'inventory_module'
   | 'patient_self_service';
 
-const TIER_FEATURE_MAP: Record<<SubscriptionTier, FeatureKey[]> = {
+const TIER_FEATURE_MAP: Record<SubscriptionTier, FeatureKey[]> = {
   trial: ['patient_self_service', 'whatsapp_automation'],
   essential: ['patient_self_service', 'whatsapp_automation', 'inventory_module'],
   professional: [
@@ -42,15 +42,15 @@ const TIER_FEATURE_MAP: Record<<SubscriptionTier, FeatureKey[]> = {
   suspended: [],
 };
 
-export function isFeatureAllowed(tier: SubscriptionTier, feature: FeatureKey): boolean {
-  if (tier === 'super_admin') return true; // Super admin bypass
-  const allowed = TIER_FEATURE_MAP[tier] || [];
+export function isFeatureAllowed(tier: SubscriptionTier | 'super_admin', feature: FeatureKey): boolean {
+  if (tier === 'super_admin') return true;
+  const allowed = TIER_FEATURE_MAP[tier as SubscriptionTier] || [];
   return allowed.includes(feature);
 }
 
-export function getAllowedFeatures(tier: SubscriptionTier): FeatureKey[] {
+export function getAllowedFeatures(tier: SubscriptionTier | 'super_admin'): FeatureKey[] {
   if (tier === 'super_admin') return Object.keys(TIER_FEATURE_MAP) as FeatureKey[];
-  return TIER_FEATURE_MAP[tier] || [];
+  return TIER_FEATURE_MAP[tier as SubscriptionTier] || [];
 }
 
 export function getBlockedFeatures(tier: SubscriptionTier): FeatureKey[] {

@@ -16,10 +16,10 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<<AuthContextValue, 'logout'>>({
+  const [state, setState] = useState<Omit<AuthContextValue, 'logout'>>({
     userId: null,
     email: null,
     fullName: null,
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         setState({
           userId: user.id,
-          email: user.email,
+          email: user.email ?? null,
           fullName: user.fullName,
           role: user.role as UserRole,
           tenantId: user.tenantId,

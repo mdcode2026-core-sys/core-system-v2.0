@@ -24,7 +24,7 @@ export const conflictResolver = {
   },
 
   async resolveAndStore(table: string, cloudRecord: Record<string, unknown>): Promise<void> {
-    const localRecord = await coreDrive.get(table, cloudRecord.id as string);
+    const localRecord = await coreDrive.get(table, cloudRecord.id as string) as Record<string, unknown> | undefined;
 
     if (!localRecord) {
       // No local copy — just store cloud version

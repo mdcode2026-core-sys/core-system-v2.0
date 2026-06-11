@@ -17,7 +17,7 @@ export function classifyPatient(displayScore: number): PatientClass {
  * Get Arabic label for UI display
  */
 export function getClassLabel(classType: PatientClass): string {
-  const labels: Record<<PatientClass, string> = {
+  const labels: Record<PatientClass, string> = {
     hot_lead: 'عميل ساخن',
     qualified: 'مؤهل',
     high_priority: 'أولوية عالية',
@@ -31,7 +31,7 @@ export function getClassLabel(classType: PatientClass): string {
  * Get color token for Tailwind classes
  */
 export function getClassColor(classType: PatientClass): string {
-  const colors: Record<<PatientClass, string> = {
+  const colors: Record<PatientClass, string> = {
     hot_lead: 'emerald',
     qualified: 'green',
     high_priority: 'blue',

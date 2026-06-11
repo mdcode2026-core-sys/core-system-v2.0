@@ -18,8 +18,8 @@ export const DEFAULT_WEIGHTS: ScoreWeights = {
  * This allows per-tenant override via database.
  */
 export async function getActiveWeights(
-  supabaseClient: unknown // Replace with SupabaseClient type when available
-): Promise<<ScoreWeights> {
+  _supabaseClient: unknown
+): Promise<ScoreWeights> {
   // TODO: Implement DB fetch from core_rules_config where rule_key = 'weights'
   // For now, return defaults to avoid blocking the engine.
   return DEFAULT_WEIGHTS;

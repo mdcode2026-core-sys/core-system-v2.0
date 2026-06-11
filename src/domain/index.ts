@@ -6,7 +6,5 @@ export * from './tenants/tenants.queries';
 export * from './tenants/tenants.mutations';
 export * from './patients/patients.queries';
 export * from './patients/patients.mutations';
-export * from './sessions/sessions.queries';
-export * from './sessions/sessions.mutations';
 export * from './invoicing/invoicing.queries';
 export * from './invoicing/invoicing.mutations';

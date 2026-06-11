@@ -10,7 +10,6 @@ export function calculateTrialCountdown(trialStartedAt: string): TrialCountdown 
   const start = new Date(trialStartedAt);
   const now = new Date();
   const elapsedMs = now.getTime() - start.getTime();
-  const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
 
   const totalDurationMs = TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000;
   const remainingMs = totalDurationMs - elapsedMs;

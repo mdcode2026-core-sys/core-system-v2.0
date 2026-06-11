@@ -17,7 +17,7 @@ export interface PendingMutation {
 const MUTATION_STORE = 'mutations';
 
 export const mutationQueue = {
-  async enqueue(mutation: Omit<<PendingMutation, 'id' | 'timestamp' | 'status' | 'retryCount'>): Promise<void> {
+  async enqueue(mutation: Omit<PendingMutation, 'id' | 'timestamp' | 'status' | 'retryCount'>): Promise<void> {
     const item: PendingMutation = {
       ...mutation,
       id: crypto.randomUUID(),
@@ -28,8 +28,8 @@ export const mutationQueue = {
     await coreDrive.put(MUTATION_STORE, item);
   },
 
-  async dequeue(): Promise<<PendingMutation | undefined> {
-    const all = await coreDrive.getByIndex<<PendingMutation>(MUTATION_STORE, 'byStatus', 'pending');
+  async dequeue(): Promise<PendingMutation | undefined> {
+    const all = await coreDrive.getByIndex<PendingMutation>(MUTATION_STORE, 'byStatus', 'pending');
     if (all.length === 0) return undefined;
     // Sort by timestamp (FIFO)
     all.sort((a, b) => a.timestamp - b.timestamp);
@@ -37,7 +37,7 @@ export const mutationQueue = {
   },
 
   async markSyncing(id: string): Promise<void> {
-    const item = await coreDrive.get<<PendingMutation>(MUTATION_STORE, id);
+    const item = await coreDrive.get<PendingMutation>(MUTATION_STORE, id);
     if (item) {
       item.status = 'syncing';
       await coreDrive.put(MUTATION_STORE, item);
@@ -45,7 +45,7 @@ export const mutationQueue = {
   },
 
   async markFailed(id: string, error: string): Promise<void> {
-    const item = await coreDrive.get<<PendingMutation>(MUTATION_STORE, id);
+    const item = await coreDrive.get<PendingMutation>(MUTATION_STORE, id);
     if (item) {
       item.status = 'failed';
       item.retryCount += 1;
@@ -58,13 +58,13 @@ export const mutationQueue = {
     await coreDrive.delete(MUTATION_STORE, id);
   },
 
-  async getAllPending(): Promise<<PendingMutation[]> {
-    const all = await coreDrive.getByIndex<<PendingMutation>(MUTATION_STORE, 'byStatus', 'pending');
+  async getAllPending(): Promise<PendingMutation[]> {
+    const all = await coreDrive.getByIndex<PendingMutation>(MUTATION_STORE, 'byStatus', 'pending');
     return all.sort((a, b) => a.timestamp - b.timestamp);
   },
 
-  async getFailed(): Promise<<PendingMutation[]> {
-    const all = await coreDrive.getByIndex<<PendingMutation>(MUTATION_STORE, 'byStatus', 'failed');
+  async getFailed(): Promise<PendingMutation[]> {
+    const all = await coreDrive.getByIndex<PendingMutation>(MUTATION_STORE, 'byStatus', 'failed');
     return all;
   },
 

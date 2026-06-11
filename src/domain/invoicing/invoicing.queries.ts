@@ -1,7 +1,5 @@
-// src/domain/invoicing/invoicing.queries.ts
-// React Query hooks: useInvoice, useInvoicesBySession, useUnpaidInvoices
-
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../infrastructure/supabase/client';
 
 export interface InvoiceRow {
   id: string;
@@ -16,9 +14,9 @@ export interface InvoiceRow {
   paid_subunits: number;
   balance_subunits: number;
   status: string;
-  doctor_par_confirmed: boolean;
-  collected_reception: boolean;
-  match_triangulation: boolean;
+  issued_at: string | null;
+  paid_at: string | null;
+  payment_method: string | null;
 }
 
 const INVOICE_KEY = 'invoices';
@@ -26,8 +24,14 @@ const INVOICE_KEY = 'invoices';
 export function useInvoice(invoiceId: string) {
   return useQuery({
     queryKey: [INVOICE_KEY, invoiceId],
-    queryFn: async (): Promise<<InvoiceRow> => {
-      throw new Error('Not implemented: wire to Supabase');
+    queryFn: async (): Promise<InvoiceRow> => {
+      const { data, error } = await supabase
+        .from('clinic_invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .single();
+      if (error) throw error;
+      return data;
     },
     enabled: !!invoiceId,
   });
@@ -36,8 +40,14 @@ export function useInvoice(invoiceId: string) {
 export function useInvoicesBySession(sessionId: string) {
   return useQuery({
     queryKey: [INVOICE_KEY, 'session', sessionId],
-    queryFn: async (): Promise<<InvoiceRow[]> => {
-      throw new Error('Not implemented: wire to Supabase');
+    queryFn: async (): Promise<InvoiceRow[]> => {
+      const { data, error } = await supabase
+        .from('clinic_invoices')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
     },
     enabled: !!sessionId,
   });
@@ -46,9 +56,38 @@ export function useInvoicesBySession(sessionId: string) {
 export function useUnpaidInvoicesByPatient(patientId: string) {
   return useQuery({
     queryKey: [INVOICE_KEY, 'unpaid', patientId],
-    queryFn: async (): Promise<<InvoiceRow[]> => {
-      throw new Error('Not implemented: wire to Supabase');
+    queryFn: async (): Promise<InvoiceRow[]> => {
+      const { data, error } = await supabase
+        .from('clinic_invoices')
+        .select('*')
+        .eq('patient_id', patientId)
+        .in('status', ['draft', 'issued', 'partial', 'overdue'])
+        .order('issued_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
     },
     enabled: !!patientId,
+  });
+}
+
+export function useInvoicesByTenant(tenantId: string, status?: string) {
+  return useQuery({
+    queryKey: [INVOICE_KEY, 'tenant', tenantId, status],
+    queryFn: async (): Promise<InvoiceRow[]> => {
+      let query = supabase
+        .from('clinic_invoices')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('issued_at', { ascending: false });
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!tenantId,
   });
 }

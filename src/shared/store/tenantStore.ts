@@ -39,7 +39,7 @@ export interface TenantState {
 
   // Actions
   setConfig: (config: TenantConfig) => void;
-  setFeatures: (features: Partial<<FeatureFlags>) => void;
+  setFeatures: (features: Partial<FeatureFlags>) => void;
   setLoading: (loading: boolean) => void;
   clearTenant: () => void;
   getCurrencyContext: () => { code: string; subunit: number } | null;

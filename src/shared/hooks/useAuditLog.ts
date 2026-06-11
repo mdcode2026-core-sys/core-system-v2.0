@@ -2,7 +2,7 @@
 // Typed audit write helper
 
 import { supabase } from '../../infrastructure/supabase/client';
-import type { AuditAction, AuditActorType } from '../../shared/types/database';
+import type { AuditAction } from '../../shared/types/database';
 
 export interface AuditPayload {
   action: AuditAction;

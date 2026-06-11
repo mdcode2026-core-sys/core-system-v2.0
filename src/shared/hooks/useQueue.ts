@@ -4,7 +4,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../infrastructure/supabase/client';
 import { useQueueChannel } from '../../core/realtime/useQueueChannel';
-import type { QueueItem } from '../types/queue';
+import type { QueueItem } from '../store/queueStore';
 
 const QUEUE_KEY = 'live-queue';
 
@@ -14,7 +14,7 @@ export function useQueue(tenantId: string) {
 
   return useQuery({
     queryKey: [QUEUE_KEY, tenantId],
-    queryFn: async (): Promise<<QueueItem[]> => {
+    queryFn: async (): Promise<QueueItem[]> => {
       const { data, error } = await supabase
         .from('clinic_visit_sessions')
         .select(`

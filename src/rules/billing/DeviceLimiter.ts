@@ -3,7 +3,7 @@
 
 import type { SubscriptionTier } from '../../shared/types/database';
 
-const DEVICE_LIMITS: Record<<SubscriptionTier, number> = {
+const DEVICE_LIMITS: Record<SubscriptionTier, number> = {
   trial: 2,
   essential: 2,
   professional: 5,
