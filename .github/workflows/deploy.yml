@@ -35,7 +35,8 @@ jobs:
         run: supabase link --project-ref $SUPABASE_PROJECT_ID --password $SUPABASE_DB_PASSWORD
 
       - name: Deploy database migrations
-        run: supabase db push --linked
+        run: |
+          supabase db push --db-url postgresql://postgres.${SUPABASE_PROJECT_ID}:${SUPABASE_DB_PASSWORD}@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres
 
       - name: Deploy Edge Functions
         run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
