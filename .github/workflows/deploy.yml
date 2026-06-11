@@ -32,9 +32,10 @@ jobs:
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
       - name: Link to Supabase project
-        run: |
-          supabase link --project-ref $SUPABASE_PROJECT_ID --password $SUPABASE_DB_PASSWORD
-          supabase db push --project-ref $SUPABASE_PROJECT_ID
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID --password $SUPABASE_DB_PASSWORD
+
+      - name: Deploy database migrations
+        run: supabase db push --linked
 
       - name: Deploy Edge Functions
         run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
