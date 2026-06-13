@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTenant } from "@/shared/hooks/useTenant";
 import { useQueue } from "@/shared/hooks/useQueue";
 import { useNetworkStatus } from "@/shared/hooks/useNetworkStatus";
-import { useAuth } from "@/core/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,29 +14,31 @@ interface QueueItem {
   patientName: string;
   status: "waiting" | "in-progress" | "completed";
   queueNumber: string;
-  estimatedWait: number; // minutes
+  estimatedWait: number;
 }
 
-export default function AmbientKioskView() {
-  const { tenant, isLoading: tenantLoading } = useTenant();; 
-  const { queue, isLoading: queueLoading } = useQueue();
-  const { isOnline } = useNetworkStatus();
-  const { user } = useAuth();
+interface AmbientKioskViewProps {
+  tenantId: string;
+}
 
-  const [currentTime, setCurrentTime] = useState(new Date());
+export default function AmbientKioskView({ tenantId }: AmbientKioskViewProps) {
+  const { tenant, isLoading: tenantLoading } = useTenant(tenantId);
+  const { queue, isLoading: queueLoading } = useQueue(tenantId);
+  const { isOnline } = useNetworkStatus();
+
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [checkInStep, setCheckInStep] = useState<"input" | "confirm" | "success">("input");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [appointmentNumber, setAppointmentNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update clock every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date): string => {
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -45,7 +46,7 @@ export default function AmbientKioskView() {
     });
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -58,13 +59,11 @@ export default function AmbientKioskView() {
     if (!phoneNumber && !appointmentNumber) return;
 
     setIsSubmitting(true);
-    // Simulate API call - in real app this would call domain logic
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setCheckInStep("success");
     setIsSubmitting(false);
 
-    // Reset after 5 seconds
     setTimeout(() => {
       setShowCheckIn(false);
       setCheckInStep("input");
@@ -73,7 +72,7 @@ export default function AmbientKioskView() {
     }, 5000);
   }, [phoneNumber, appointmentNumber]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "waiting": return "bg-amber-500";
       case "in-progress": return "bg-emerald-500";
@@ -82,7 +81,7 @@ export default function AmbientKioskView() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string): string => {
     switch (status) {
       case "waiting": return "Waiting";
       case "in-progress": return "In Progress";
@@ -91,7 +90,6 @@ export default function AmbientKioskView() {
     }
   };
 
-  // Mock queue data for display if queue hook returns empty (fallback)
   const displayQueue: QueueItem[] = queue?.length > 0 ? queue : [
     { id: "1", patientName: "Ahmad M.", status: "in-progress", queueNumber: "A001", estimatedWait: 0 },
     { id: "2", patientName: "Sarah K.", status: "waiting", queueNumber: "A002", estimatedWait: 15 },
@@ -100,7 +98,6 @@ export default function AmbientKioskView() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1B2A4A] via-[#243656] to-[#1B2A4A] text-white flex flex-col">
-      {/* Header Bar */}
       <header className="px-6 py-4 md:px-12 md:py-6 flex items-center justify-between border-b border-white/10 bg-[#1B2A4A]/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-white/10 flex items-center justify-center">
@@ -142,9 +139,7 @@ export default function AmbientKioskView() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col lg:flex-row gap-6 p-4 md:p-8 lg:p-12 overflow-hidden">
-        {/* Left Panel: Check-In CTA */}
         <section className="lg:w-1/2 flex flex-col gap-6">
           <Card className="flex-1 bg-white/5 border-white/10 backdrop-blur-sm">
             <CardContent className="p-6 md:p-12 flex flex-col items-center justify-center text-center h-full gap-8">
@@ -177,7 +172,6 @@ export default function AmbientKioskView() {
           </Card>
         </section>
 
-        {/* Right Panel: Live Queue */}
         <section className="lg:w-1/2 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
@@ -189,7 +183,7 @@ export default function AmbientKioskView() {
             </Badge>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-3 md:space-y-4 pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto space-y-3 md:space-y-4 pr-2">
             {queueLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
@@ -244,7 +238,6 @@ export default function AmbientKioskView() {
         </section>
       </main>
 
-      {/* Check-In Dialog */}
       <Dialog open={showCheckIn} onOpenChange={setShowCheckIn}>
         <DialogContent className="bg-[#1B2A4A] border-white/10 text-white max-w-lg w-[95vw] p-0 overflow-hidden">
           {checkInStep === "input" && (
@@ -268,7 +261,7 @@ export default function AmbientKioskView() {
                     type="tel"
                     placeholder="05X XXX XXXX"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
                     className="h-14 md:h-16 text-lg md:text-xl bg-white/5 border-white/20 text-white placeholder:text-white/30 focus:border-white/40 focus:ring-white/20"
                   />
                 </div>
@@ -291,7 +284,7 @@ export default function AmbientKioskView() {
                     type="text"
                     placeholder="APT-XXXXX"
                     value={appointmentNumber}
-                    onChange={(e) => setAppointmentNumber(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAppointmentNumber(e.target.value)}
                     className="h-14 md:h-16 text-lg md:text-xl bg-white/5 border-white/20 text-white placeholder:text-white/30 focus:border-white/40 focus:ring-white/20"
                   />
                 </div>
@@ -334,7 +327,6 @@ export default function AmbientKioskView() {
         </DialogContent>
       </Dialog>
 
-      {/* Footer */}
       <footer className="px-6 py-4 md:px-12 md:py-6 border-t border-white/10 bg-[#1B2A4A]/80 text-center">
         <p className="text-sm md:text-base text-white/40">
           CORE SYSTEM v2.0 • {tenant?.name || "Clinic Management System"}
