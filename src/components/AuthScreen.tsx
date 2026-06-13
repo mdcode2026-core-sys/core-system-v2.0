@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/core/auth/useAuth";
 import { useNetworkStatus } from "@/shared/hooks/useNetworkStatus";
-import { Wifi, WifiOff, Shield, Mail, Lock, KeyRound, Eye, EyeOff, AlertCircle, ArrowRight, X } from "lucide-react";
+import { Wifi, WifiOff, Shield, Mail, Lock, KeyRound, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
 
 interface AuthScreenProps {
   onSuccess?: () => void;
@@ -59,16 +59,17 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         setPin(newPin);
         setPinIndex(pinIndex + 1);
         if (pinIndex === 3) {
-          const fullPin = newPin.join("");
-          void fullPin;
-          handlePinLogin(fullPin);
+          const enteredPin = newPin.join("");
+          console.log("PIN:", enteredPin);
+          handlePinLogin(enteredPin);
         }
       }
     },
     [pin, pinIndex, isLoading]
   );
 
-  const handlePinLogin = async (fullPin: string) => {
+  const handlePinLogin = async (enteredPin: string) => {
+  void enteredPin;
     setLocalError(null);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));

@@ -4,14 +4,6 @@ import { useQueue } from "@/shared/hooks/useQueue";
 import { useNetworkStatus } from "@/shared/hooks/useNetworkStatus";
 import { Wifi, WifiOff, Clock, User, Phone, Calendar, ArrowRight, CheckCircle2, X } from "lucide-react";
 
-interface QueueItem {
-  id: string;
-  patientName: string;
-  status: "waiting" | "in-progress" | "completed";
-  queueNumber: string;
-  estimatedWait: number;
-}
-
 interface AmbientKioskViewProps {
   tenantId: string;
 }
@@ -73,7 +65,7 @@ export default function AmbientKioskView({ tenantId }: AmbientKioskViewProps) {
     }
   };
 
-  const displayQueue: QueueItem[] = queue && queue.length > 0 ? queue : [
+  const displayQueue: any[] = queue && queue.length > 0 ? queue : [
     { id: "1", patientName: "Ahmad M.", status: "in-progress", queueNumber: "A001", estimatedWait: 0 },
     { id: "2", patientName: "Sarah K.", status: "waiting", queueNumber: "A002", estimatedWait: 15 },
     { id: "3", patientName: "Mohammed R.", status: "waiting", queueNumber: "A003", estimatedWait: 30 },

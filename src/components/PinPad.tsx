@@ -89,7 +89,7 @@ export default function PinPad({
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       const mockRole = "doctor";
-
+      
       if (allowedRoles.includes(mockRole)) {
         onSuccess?.("mock-user-id", mockRole);
       } else {
@@ -181,14 +181,20 @@ export default function PinPad({
                     : "bg-white/5 border-2 border-white/10"
                 }`}
               >
-                {pin[index] ? <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-white" /> : <span className="text-white/20">{index + 1}</span>}
+                {pin[index] ? (
+                  <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-white" />
+                ) : (
+                  <span className="text-white/20">{index + 1}</span>
+                )}
               </div>
             ))}
           </div>
 
           {!isLocked && attempts > 0 && (
             <div className="text-center mb-4">
-              <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-sm px-3 py-1 rounded-full">Attempt {attempts} of {MAX_ATTEMPTS}</span>
+              <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-sm px-3 py-1 rounded-full">
+                Attempt {attempts} of {MAX_ATTEMPTS}
+              </span>
             </div>
           )}
 
@@ -204,7 +210,11 @@ export default function PinPad({
                     : "bg-white/15 hover:bg-white/25 text-2xl md:text-4xl"
                 } disabled:opacity-30 disabled:cursor-not-allowed`}
               >
-                {isLoading && key === "0" ? <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto" /> : getKeyIcon(key)}
+                {isLoading && key === "0" ? (
+                  <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+                ) : (
+                  getKeyIcon(key)
+                )}
               </button>
             ))}
           </div>
@@ -220,7 +230,7 @@ export default function PinPad({
           )}
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-white/40">CORE SYSTEM v2.0 • Secure PIN Entry</p>
+            <p className="text-sm text-white/40">CORE SYSTEM v2.0 - Secure PIN Entry</p>
           </div>
         </div>
       </div>
@@ -231,8 +241,10 @@ export default function PinPad({
           10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
           20%, 40%, 60%, 80% { transform: translateX(8px); }
         }
-        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
       `}</style>
-    </div>ٍسس
+    </div>
   );
 }
