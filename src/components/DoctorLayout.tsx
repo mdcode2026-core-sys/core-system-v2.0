@@ -1,3 +1,4 @@
+import { Outlet } from "react-router-dom";
 export function DoctorLayout() {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -7,7 +8,7 @@ export function DoctorLayout() {
       </header>
       <main className="p-6">
         <div className="bg-white rounded-xl shadow p-6">
-          <p className="text-slate-500">Doctor interface placeholder</p>
+          <Outlet />
         </div>
       </main>
     </div>
