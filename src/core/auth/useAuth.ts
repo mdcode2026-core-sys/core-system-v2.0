@@ -50,16 +50,14 @@ export function useAuth() {
         throw new Error('LICENSE_REQUIRED: Clinic license key is required');
       }
 
-      // ─── 1. Validate License ───
-      const { data: tenant, error: tenantError } = await supabase
-        .from('master_tenants')
-        .select('id, clinic_name, primary_color, max_devices, subscription_tier, is_active')
-        .eq('license_key', licenseKey)
-        .single();
+      // ─── 1. Validate License via RPC (bypasses RLS) ───
+      const { data: tenantRows, error: tenantError } = await supabase
+        .rpc('validate_license', { p_license_key: licenseKey });
 
-      if (tenantError || !tenant) {
+      if (tenantError || !tenantRows || tenantRows.length === 0) {
         throw new Error('INVALID_LICENSE: License key not found');
       }
+      const tenant = tenantRows[0];
       if (!tenant.is_active) {
         throw new Error('TENANT_SUSPENDED: This clinic account is suspended');
       }
@@ -163,8 +161,8 @@ export function useAuth() {
 
       // ─── 6. Update Tenant Store ───
       setTenantId(tenant.id);
-      setTenantName(tenant.clinic_name);
-      setPrimaryColor(tenant.primary_color || '#1B2A4A');
+      setTenantName(tenant.name);
+      setPrimaryColor((tenant.settings?.primaryColor || '#1B2A4A') || '#1B2A4A');
       setSubscriptionTier(tenant.subscription_tier);
 
       return {
@@ -173,7 +171,7 @@ export function useAuth() {
         fullName: userFullName,
         role: userRole,
         tenantId: tenant.id,
-        tenantName: tenant.clinic_name,
+        tenantName: tenant.name,
       };
     },
   });
