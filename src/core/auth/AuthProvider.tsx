@@ -1,7 +1,6 @@
-// src/core/auth/AuthProvider.tsx
 // Supabase Auth + JWT claims injection for RLS
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, getCurrentUserWithClaims } from '../../infrastructure/supabase/client';
 import type { UserRole } from '../../shared/types/database';
 
@@ -14,12 +13,13 @@ export interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
+  setUser: (user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => void;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<AuthContextValue, 'logout'>>({
+  const [state, setState] = useState<Omit<<AuthContextValue, 'logout' | 'setUser'>>({
     userId: null,
     email: null,
     fullName: null,
@@ -30,9 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Initial session check
     getCurrentUserWithClaims().then((user) => {
-      if (user) {
+      if (user?.tenantId) {
         setState({
           userId: user.id,
           email: user.email ?? null,
@@ -47,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         const meta = session.user.user_metadata;
@@ -78,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setState({
       userId: null,
@@ -89,10 +87,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading: false,
       isAuthenticated: false,
     });
-  };
+  }, []);
+
+  const setUser = useCallback((user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => {
+    setState({
+      userId: user.userId,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      tenantId: user.tenantId,
+      isLoading: false,
+      isAuthenticated: true,
+    });
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, logout }}>
+    <AuthContext.Provider value={{ ...state, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
