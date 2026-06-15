@@ -5,12 +5,12 @@ import { useNetworkStatus } from "@/shared/hooks/useNetworkStatus";
 import { Wifi, WifiOff, Clock, User, Phone, Calendar, ArrowRight, CheckCircle2, X } from "lucide-react";
 
 interface AmbientKioskViewProps {
-  tenantId: string;
+  tenantId?: string;
 }
 
 export default function AmbientKioskView({ tenantId }: AmbientKioskViewProps) {
-  const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId);
-  const { data: queue, isLoading: queueLoading } = useQueue(tenantId);
+  const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId || "");
+  const { data: queue, isLoading: queueLoading } = useQueue();
   const { isOnline } = useNetworkStatus();
 
   const [currentTime, setCurrentTime] = useState<Date>(new Date());

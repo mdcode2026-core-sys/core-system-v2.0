@@ -14,7 +14,7 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
   const { login, isPending } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  const [activeTab, setActiveTab] = useState<<"email" | "pin">("email");
+  const [activeTab, setActiveTab] = useState<"email" | "pin">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [licenseKey, setLicenseKey] = useState("");

@@ -13,11 +13,11 @@ export function useQueue() {
   const { tenantId } = useAuthContext();
   const { setItems, setLoading } = useQueueStore();
 
-  useQueueChannel(tenantId);
+  useQueueChannel(tenantId || "");
 
   const query = useQuery({
     queryKey: [QUEUE_KEY, tenantId],
-    queryFn: async (): Promise<<QueueItem[]> => {
+    queryFn: async (): Promise<QueueItem[]> => {
       if (!tenantId) throw new Error('MISSING_TENANT_ID');
 
       const { data, error } = await supabase
@@ -26,10 +26,10 @@ export function useQueue() {
           id,
           patient_id,
           session_status,
-          arrived_at,
-          session_started_at,
+          actual_check_in,
+          actual_start,
           lock_holder_id,
-          waiting_time_minutes,
+          wait_time_minutes,
           core_score_display,
           is_insured,
           clinic_patients!inner(full_name),
@@ -38,12 +38,12 @@ export function useQueue() {
         `)
         .eq('tenant_id', tenantId)
         .in('session_status', ['waiting', 'in_consultation'])
-        .order('arrived_at', { ascending: true });
+        .order('actual_check_in', { ascending: true });
 
       if (error) throw error;
 
       return (data || []).map((row: Record<string, unknown>) => {
-        const waitMinutes = row.waiting_time_minutes as number ?? 0;
+        const waitMinutes = row.wait_time_minutes as number ?? 0;
         const score = row.core_score_display as number | null;
 
         let priority: QueueItem['priority'] = 'medium_priority';

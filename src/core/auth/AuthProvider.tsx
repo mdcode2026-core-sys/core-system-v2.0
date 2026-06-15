@@ -16,10 +16,10 @@ export interface AuthContextValue {
   setUser: (user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => void;
 }
 
-const AuthContext = createContext<<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<<AuthContextValue, 'logout' | 'setUser'>>({
+  const [state, setState] = useState<Omit<AuthContextValue, 'logout' | 'setUser'>>({
     userId: null,
     email: null,
     fullName: null,
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({
           userId: user.id,
           email: user.email ?? null,
-          fullName: user.fullName,
+          fullName: user.fullName ?? null,
           role: user.role as UserRole,
           tenantId: user.tenantId,
           isLoading: false,
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({
       userId: user.userId,
       email: user.email,
-      fullName: user.fullName,
+      fullName: user.fullName ?? null,
       role: user.role,
       tenantId: user.tenantId,
       isLoading: false,

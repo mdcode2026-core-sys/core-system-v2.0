@@ -45,7 +45,7 @@ export async function verifyJwtClaims() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
 
-  const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+  const token = session.access_token || ''; const parts = token.split('.'); const payload = parts[1] ? JSON.parse(atob(parts[1])) : {};
 
   return {
     hasTenantId: !!payload.user_metadata?.tenant_id,

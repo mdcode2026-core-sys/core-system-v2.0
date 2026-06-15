@@ -35,6 +35,9 @@ function mapTenantRow(row: TenantRow): TenantConfig {
     maxPatients: row.max_patients,
     maxProceduresPerMonth: row.max_procedures_per_month,
     maxDevices: row.max_devices,
+    licenseKey: (row as any).license_key,
+    isActive: (row as any).is_active,
+    settings: row.settings ?? {},
   };
 }
 

@@ -7,7 +7,7 @@ export interface TenantConfig {
   name: string;
   nameAr: string | null;
   slug: string;
-  licenseKey?: string;
+  licenseKey: string;
   subscriptionTier: SubscriptionTier;
   maxDevices: number;
   maxUsers: number;
@@ -18,8 +18,8 @@ export interface TenantConfig {
   currencySubunit: number;
   primaryColor: string;
   logoUrl: string | null;
-  isActive?: boolean;
-  settings?: Record<string, unknown>;
+  isActive: boolean;
+  settings: Record<string, any>;
   [key: string]: any;
 }
 

@@ -34,6 +34,9 @@ export function useTenant(tenantId: string) {
         maxPatients: data.max_patients,
         maxProceduresPerMonth: data.max_procedures_per_month,
         maxDevices: data.max_devices,
+        licenseKey: data.license_key,
+        isActive: data.is_active,
+        settings: data.settings ?? {},
       };
     },
     enabled: !!tenantId,
