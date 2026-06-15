@@ -10,8 +10,6 @@ import { SurveyRouter } from "@/components/SurveyRouter";
 import { LiveQueueBoard } from "@/components/LiveQueueBoard";
 import CoreScoreWidget from "@/components/CoreScoreWidget";
 
-const DEFAULT_TENANT_ID = "default-tenant-id";
-
 function PagePlaceholder({ title }: { title: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-96 text-white/60">
@@ -25,7 +23,7 @@ function PagePlaceholder({ title }: { title: string }) {
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <AuthScreen onSuccess={() => window.location.href = "/reception"} /> },
-  { path: "/kiosk", element: <AmbientKioskView tenantId={DEFAULT_TENANT_ID} /> },
+  { path: "/kiosk", element: <AmbientKioskView /> },
   {
     path: "/kiosk-pin",
     element: (
@@ -52,7 +50,7 @@ export const router = createBrowserRouter([
               <CoreScoreWidget score={92} label="Patient Satisfaction" trend="up" />
               <CoreScoreWidget score={78} label="Staff Performance" trend="neutral" />
             </div>
-            <LiveQueueBoard tenantId={DEFAULT_TENANT_ID} />
+            <LiveQueueBoard />
           </div>
         ),
       },
