@@ -1,19 +1,23 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/core/auth/useAuth";
 import { useNetworkStatus } from "@/shared/hooks/useNetworkStatus";
-import { Wifi, WifiOff, Shield, Mail, Lock, KeyRound, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
+import {
+  Wifi, WifiOff, Shield, Mail, Lock, KeyRound,
+  Eye, EyeOff, AlertCircle, ArrowRight, Building2
+} from "lucide-react";
 
 interface AuthScreenProps {
   onSuccess?: () => void;
 }
 
 export default function AuthScreen({ onSuccess }: AuthScreenProps) {
-  const { isLoading } = useAuth();
+  const { login, isPending } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  const [activeTab, setActiveTab] = useState<"email" | "pin">("email");
+  const [activeTab, setActiveTab] = useState<<"email" | "pin">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [licenseKey, setLicenseKey] = useState("");
   const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [pinIndex, setPinIndex] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -21,24 +25,46 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleEmailLogin = useCallback(async () => {
-    if (!email || !password) {
-      setLocalError("Please enter email and password");
+    if (!email || !password || !licenseKey) {
+      setLocalError("Please enter email, password, and license key");
       return;
     }
     setLocalError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await login.mutateAsync({ email, password, licenseKey });
       onSuccess?.();
-    } catch {
-      setLocalError("Invalid email or password");
+    } catch (err: any) {
+      setLocalError(err.message || "Invalid credentials or license");
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
-  }, [email, password, onSuccess]);
+  }, [email, password, licenseKey, login, onSuccess]);
+
+  const handlePinLogin = async (enteredPin: string) => {
+    if (!licenseKey) {
+      setLocalError("License key required for PIN login");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      setPin(["", "", "", ""]);
+      setPinIndex(0);
+      return;
+    }
+    setLocalError(null);
+    try {
+      await login.mutateAsync({ pinCode: enteredPin, licenseKey });
+      onSuccess?.();
+    } catch (err: any) {
+      setLocalError(err.message || "Invalid PIN");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      setPin(["", "", "", ""]);
+      setPinIndex(0);
+    }
+  };
 
   const handlePinPress = useCallback(
     (key: string) => {
-      if (isLoading) return;
+      if (isPending) return;
       if (key === "backspace") {
         if (pinIndex > 0) {
           const newPin = [...pin];
@@ -59,29 +85,12 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         setPin(newPin);
         setPinIndex(pinIndex + 1);
         if (pinIndex === 3) {
-          const enteredPin = newPin.join("");
-          console.log("PIN:", enteredPin);
-          handlePinLogin(enteredPin);
+          handlePinLogin(newPin.join(""));
         }
       }
     },
-    [pin, pinIndex, isLoading]
+    [pin, pinIndex, isPending]
   );
-
-  const handlePinLogin = async (enteredPin: string) => {
-  void enteredPin;
-    setLocalError(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      onSuccess?.();
-    } catch {
-      setLocalError("Invalid PIN");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      setPin(["", "", "", ""]);
-      setPinIndex(0);
-    }
-  };
 
   const keypadKeys = [
     ["1", "2", "3"],
@@ -124,6 +133,19 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden ${shake ? "animate-shake" : ""}`}>
           <div className="p-6">
             <h2 className="text-xl md:text-2xl text-center text-white/90 font-semibold mb-6">Staff Login</h2>
+
+            <div className="mb-6 space-y-2">
+              <label className="text-sm font-medium text-white/70 flex items-center gap-2">
+                <Building2 className="w-4 h-4" /> Clinic License Key
+              </label>
+              <input
+                type="text"
+                placeholder="XXXX-XXXX-XXXX"
+                value={licenseKey}
+                onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
+                className="w-full h-12 md:h-14 text-base md:text-lg bg-white/5 border border-white/20 text-white placeholder:text-white/30 rounded-lg px-4 focus:outline-none focus:border-white/40 uppercase tracking-widest"
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-2 bg-white/10 rounded-lg p-1 mb-6">
               <button
@@ -179,10 +201,14 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
                 </div>
                 <button
                   onClick={handleEmailLogin}
-                  disabled={!email || !password || isLoading}
+                  disabled={!email || !password || !licenseKey || isPending}
                   className="w-full h-14 md:h-16 text-lg md:text-xl font-bold bg-white text-[#1B2A4A] hover:bg-white/90 disabled:opacity-50 rounded-xl flex items-center justify-center gap-2"
                 >
-                  {isLoading ? <div className="w-6 h-6 border-4 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" /> : <><span>Sign In</span><ArrowRight className="w-5 h-5" /></>}
+                  {isPending ? (
+                    <div className="w-6 h-6 border-4 border-[#1B2A4A]/20 border-t-[#1B2A4A] rounded-full animate-spin" />
+                  ) : (
+                    <><span>Sign In</span><ArrowRight className="w-5 h-5" /></>
+                  )}
                 </button>
               </div>
             )}
@@ -211,14 +237,18 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
                     <button
                       key={key}
                       onClick={() => handlePinPress(key)}
-                      disabled={isLoading}
+                      disabled={isPending}
                       className={`h-14 md:h-16 text-white font-bold rounded-xl transition-all active:scale-95 border border-white/20 ${
                         key === "backspace" || key === "clear"
                           ? "bg-white/10 hover:bg-white/20"
                           : "bg-white/15 hover:bg-white/25 text-2xl"
                       } disabled:opacity-30`}
                     >
-                      {isLoading && key === "0" ? <div className="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto" /> : getKeyIcon(key)}
+                      {isPending && key === "0" ? (
+                        <div className="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+                      ) : (
+                        getKeyIcon(key)
+                      )}
                     </button>
                   ))}
                 </div>
