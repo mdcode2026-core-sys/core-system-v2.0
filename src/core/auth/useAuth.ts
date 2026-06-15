@@ -127,6 +127,11 @@ export function useAuth() {
         userRole = pinUser.role;
         userEmail = null;
 
+        localStorage.setItem('pin_auth', JSON.stringify({
+          userId: userIdStr, fullName: userFullName, role: userRole,
+          tenantId: tenant.id, timestamp: Date.now(),
+        }));
+
         setUser({
           userId: userIdStr,
           email: null,

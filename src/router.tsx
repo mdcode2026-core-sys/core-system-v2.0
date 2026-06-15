@@ -22,7 +22,7 @@ function PagePlaceholder({ title }: { title: string }) {
 
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
-  { path: "/login", element: <AuthScreen onSuccess={() => window.location.href = "/reception"} /> },
+  { path: "/login", element: <AuthScreen /> },
   { path: "/kiosk", element: <AmbientKioskView /> },
   {
     path: "/kiosk-pin",
