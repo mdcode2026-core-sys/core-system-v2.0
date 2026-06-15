@@ -113,12 +113,10 @@ export function useAuth() {
 
       // ─── 4. PIN Login ───
       } else if (pinCode) {
-        const { data: pinUser, error: pinError } = await supabase
-          .from('clinic_users')
-          .select('id, full_name, role, pin_code')
-          .eq('tenant_id', tenant.id)
-          .eq('pin_code', pinCode)
-          .single();
+        const { data: pinUserRows, error: pinError } = await supabase
+          .rpc('validate_pin', { p_tenant_id: tenant.id, p_pin_code: pinCode });
+          
+        const pinUser = pinUserRows && pinUserRows.length > 0 ? pinUserRows[0] : null;
 
         if (pinError || !pinUser) {
           throw new Error('INVALID_PIN: Incorrect PIN code');
