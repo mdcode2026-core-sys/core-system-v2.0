@@ -1,5 +1,3 @@
-// Live queue with realtime subscription
-
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../infrastructure/supabase/client';
@@ -13,11 +11,13 @@ export function useQueue() {
   const { tenantId } = useAuthContext();
   const { setItems, setLoading } = useQueueStore();
 
-  useQueueChannel(tenantId || "");
+  console.log('DEBUG useQueue: tenantId =', tenantId);
+
+  useQueueChannel(tenantId);
 
   const query = useQuery({
     queryKey: [QUEUE_KEY, tenantId],
-    queryFn: async (): Promise<QueueItem[]> => {
+    queryFn: async (): Promise<<QueueItem[]> => {
       if (!tenantId) throw new Error('MISSING_TENANT_ID');
 
       const { data, error } = await supabase
@@ -41,6 +41,7 @@ export function useQueue() {
         .order('actual_check_in', { ascending: true });
 
       if (error) throw error;
+      console.log('DEBUG useQueue: fetched', data?.length, 'rows');
 
       return (data || []).map((row: Record<string, unknown>) => {
         const waitMinutes = row.wait_time_minutes as number ?? 0;

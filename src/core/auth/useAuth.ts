@@ -144,23 +144,26 @@ export function useAuth() {
         throw new Error('CREDENTIALS_REQUIRED: Provide email+password or PIN');
       }
 
-      // ─── 5. Register Device ───
-      const fingerprint = await generateDeviceFingerprint();
-      await supabase
-        .from('tenant_devices')
-        .upsert(
-          {
-            tenant_id: tenant.id,
-            device_fingerprint: fingerprint,
-            device_type: detectDeviceType(),
-            device_name: navigator.platform,
-            os_info: navigator.userAgent,
-            browser_info: navigator.userAgent,
-            is_active: true,
-            last_seen_at: new Date().toISOString(),
-          },
-          { onConflict: 'tenant_id,device_fingerprint' }
-        );
+      // ─── 5. Register Device (Email only) ───
+      if (loginEmail) {
+        const fingerprint = await generateDeviceFingerprint();
+        const { error: deviceError } = await supabase
+          .from('tenant_devices')
+          .upsert(
+            {
+              tenant_id: tenant.id,
+              device_fingerprint: fingerprint,
+              device_type: detectDeviceType(),
+              device_name: navigator.platform,
+              os_info: navigator.userAgent,
+              browser_info: navigator.userAgent,
+              is_active: true,
+              last_seen_at: new Date().toISOString(),
+            },
+            { onConflict: 'tenant_id,device_fingerprint' }
+          );
+        if (deviceError) console.error('Device registration failed:', deviceError);
+      }
 
       // ─── 6. Update Tenant Store ───
       setTenantId(tenant.id);
