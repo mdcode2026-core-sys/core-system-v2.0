@@ -8,10 +8,25 @@ import { useAuthContext } from '../../core/auth/AuthProvider';
 const QUEUE_KEY = 'live-queue';
 
 export function useQueue() {
-  const { tenantId } = useAuthContext();
+  const { tenantId: authTenantId } = useAuthContext();
+  
+  // Fallback to localStorage if auth context doesn't have tenantId
+  let tenantId = authTenantId;
+  if (!tenantId) {
+    try {
+      const pinAuth = localStorage.getItem('pin_auth');
+      if (pinAuth) {
+        const parsed = JSON.parse(pinAuth);
+        if (parsed.tenantId && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          tenantId = parsed.tenantId;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  
   const { setItems, setLoading } = useQueueStore();
 
-  console.log('DEBUG useQueue: tenantId =', tenantId);
+  console.log('DEBUG: tenantId =', tenantId);
 
   useQueueChannel(tenantId);
 
@@ -41,7 +56,7 @@ export function useQueue() {
         .order('actual_check_in', { ascending: true });
 
       if (error) throw error;
-      console.log('DEBUG useQueue: fetched', data?.length, 'rows');
+      console.log('DEBUG: fetched', data?.length, 'rows');
 
       return (data || []).map((row: Record<string, unknown>) => {
         const waitMinutes = row.wait_time_minutes as number ?? 0;
