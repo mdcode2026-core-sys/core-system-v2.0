@@ -14,10 +14,10 @@ export interface AuthContextValue {
   setUser: (user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => void;
 }
 
-const AuthContext = createContext<<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<<AuthContextValue, 'logout' | 'setUser'>>({
+  const [state, setState] = useState<Omit<AuthContextValue, 'logout' | 'setUser'>>({
     userId: null, email: null, fullName: null, role: null, tenantId: null,
     isLoading: true, isAuthenticated: false,
   });
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     getCurrentUserWithClaims().then((user) => {
       if (user?.tenantId) {
-        setState({ userId: user.id, email: user.email ?? null, fullName: user.fullName, role: user.role as UserRole, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
+        setState({ userId: user.id, email: user.email ?? null, fullName: user.fullName ?? null, role: user.role as UserRole, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
       } else {
         const pinAuth = localStorage.getItem('pin_auth');
         if (pinAuth) {
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setUser = useCallback((user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => {
-    setState({ userId: user.userId, email: user.email, fullName: user.fullName, role: user.role, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
+    setState({ userId: user.userId, email: user.email, fullName: user.fullName ?? null, role: user.role, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
   }, []);
 
   return <AuthContext.Provider value={{ ...state, logout, setUser }}>{children}</AuthContext.Provider>;

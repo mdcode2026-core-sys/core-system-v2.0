@@ -28,11 +28,11 @@ export function useQueue() {
 
   console.log('DEBUG: tenantId =', tenantId);
 
-  useQueueChannel(tenantId);
+  useQueueChannel(tenantId || "");
 
   const query = useQuery({
     queryKey: [QUEUE_KEY, tenantId],
-    queryFn: async (): Promise<<QueueItem[]> => {
+    queryFn: async (): Promise<QueueItem[]> => {
       if (!tenantId) throw new Error('MISSING_TENANT_ID');
 
       const { data, error } = await supabase

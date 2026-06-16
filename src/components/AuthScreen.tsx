@@ -17,7 +17,7 @@ export default function AuthScreen() {
   const [pinIndex, setPinIndex] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [shake, setShake] = useState(false);
-  const [localError, setLocalError] = useState(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleEmailLogin = useCallback(async () => {
     if (!email || !password || !licenseKey) {
@@ -28,14 +28,14 @@ export default function AuthScreen() {
     try {
       await login.mutateAsync({ email, password, licenseKey });
       navigate('/reception');
-    } catch (err) {
+    } catch (err: any) {
       setLocalError(err.message || "Invalid credentials or license");
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
   }, [email, password, licenseKey, login, navigate]);
 
-  const handlePinLogin = async (enteredPin) => {
+  const handlePinLogin = async (enteredPin: string) => {
     if (!licenseKey) {
       setLocalError("License key required for PIN login");
       setShake(true);
@@ -48,7 +48,7 @@ export default function AuthScreen() {
     try {
       await login.mutateAsync({ pinCode: enteredPin, licenseKey });
       navigate('/reception');
-    } catch (err) {
+    } catch (err: any) {
       setLocalError(err.message || "Invalid PIN");
       setShake(true);
       setTimeout(() => setShake(false), 500);
@@ -57,7 +57,7 @@ export default function AuthScreen() {
     }
   };
 
-  const handlePinPress = useCallback((key) => {
+  const handlePinPress = useCallback((key: string) => {
     if (isPending) return;
     if (key === "backspace") {
       if (pinIndex > 0) {
