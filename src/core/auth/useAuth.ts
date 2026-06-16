@@ -81,12 +81,25 @@ export function useAuth() {
 
       // ─── 3. Email + Password Login ───
       if (loginEmail && password) {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        let authData;
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: loginEmail,
           password,
         });
 
-        if (authError) throw new Error(`AUTH_FAILED: ${authError.message}`);
+        if (signInError && signInError.message.includes('Invalid login credentials')) {
+          // Auto-signup for demo (user doesn't exist in auth.users yet)
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: loginEmail,
+            password,
+          });
+          if (signUpError) throw new Error(`AUTH_FAILED: ${signUpError.message}`);
+          authData = signUpData;
+        } else if (signInError) {
+          throw new Error(`AUTH_FAILED: ${signInError.message}`);
+        } else {
+          authData = signInData;
+        }
         if (!authData.user) throw new Error('AUTH_FAILED: No user returned');
 
         userIdStr = authData.user.id;
