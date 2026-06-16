@@ -104,6 +104,18 @@ export function useAuth() {
           timestamp: Date.now(),
         }));
 
+        // Update AuthContext
+        setUser({
+          userId: userIdStr,
+          email: userEmail,
+          fullName: userFullName,
+          role: userRole as any,
+          tenantId: tenant.id,
+        });
+
+        // Return user data for navigation
+        return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
+
       // ─── 4. PIN Login ───
       } else if (pinCode) {
         const { data: pinUserRows, error: pinError } = await supabase
