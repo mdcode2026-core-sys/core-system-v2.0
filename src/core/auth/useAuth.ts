@@ -133,6 +133,8 @@ localStorage.setItem('pin_auth', JSON.stringify({
           tenantId: tenant.id,
         });
 
+        return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
+
       } else {
         throw new Error('CREDENTIALS_REQUIRED: Provide email+password or PIN');
       }

@@ -26,8 +26,10 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      await login.mutateAsync({ email, password, licenseKey });
-      navigate('/reception');
+      const result = await login.mutateAsync({ email, password, licenseKey });
+      const userRole = result?.role || 'receptionist';
+      const roleRoutes = { receptionist: '/reception', doctor: '/doctor', clinic_admin: '/admin', super_admin: '/super-admin' };
+      navigate(roleRoutes[userRole as keyof typeof roleRoutes] || '/reception');
     } catch (err: any) {
       setLocalError(err.message || "Invalid credentials or license");
       setShake(true);
@@ -46,8 +48,10 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      await login.mutateAsync({ pinCode: enteredPin, licenseKey });
-      navigate('/reception');
+      const result = await login.mutateAsync({ pinCode: enteredPin, licenseKey });
+      const userRole = result?.role || 'receptionist';
+      const roleRoutes = { receptionist: '/reception', doctor: '/doctor', clinic_admin: '/admin', super_admin: '/super-admin' };
+      navigate(roleRoutes[userRole as keyof typeof roleRoutes] || '/reception');
     } catch (err: any) {
       setLocalError(err.message || "Invalid PIN");
       setShake(true);
