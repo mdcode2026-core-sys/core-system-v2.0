@@ -105,18 +105,16 @@ export function useAuth() {
         userIdStr = authData.user.id;
         userEmail = authData.user.email ?? null;
 
+        // Use RPC to bypass RLS (session might be null after signUp)
         const { data: profile, error: profileError } = await supabase
-          .from('clinic_users')
-          .select('full_name, role')
-          .eq('id', userIdStr)
-          .eq('tenant_id', tenant.id)
-          .single();
+          .rpc('get_user_by_email', { p_email: userEmail });
 
-        if (profileError || !profile) {
+        if (profileError || !profile || profile.length === 0) {
           throw new Error('USER_NOT_FOUND: Staff profile not found in this clinic');
         }
-        userFullName = profile.full_name;
-        userRole = profile.role;
+        const userProfile = profile[0];
+        userFullName = userProfile.full_name;
+        userRole = userProfile.role;
 
         // Inject tenant_id into JWT for RLS
         await supabase.auth.updateUser({
