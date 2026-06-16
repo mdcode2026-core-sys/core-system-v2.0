@@ -81,52 +81,28 @@ export function useAuth() {
 
       // ─── 3. Email + Password Login ───
       if (loginEmail && password) {
-        let authData;
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password,
-        });
+        // Validate email/password via RPC (bypass Supabase Auth rate limits)
+        const { data: users, error: validateError } = await supabase
+          .rpc('validate_email_password', { p_email: loginEmail, p_password: password });
 
-        if (signInError && signInError.message.includes('Invalid login credentials')) {
-          // Auto-signup for demo (user doesn't exist in auth.users yet)
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: loginEmail,
-            password,
-          });
-          if (signUpError) throw new Error(`AUTH_FAILED: ${signUpError.message}`);
-          authData = signUpData;
-        } else if (signInError && signInError.message.includes('Email not confirmed')) {
-          // Email confirmation required - for demo, proceed with profile lookup only
-          authData = { user: { id: 'demo-user', email: loginEmail }, session: null };
-        } else if (signInError) {
-          throw new Error(`AUTH_FAILED: ${signInError.message}`);
-        } else {
-          authData = signInData;
+        if (validateError || !users || users.length === 0) {
+          throw new Error('AUTH_FAILED: Invalid email or password');
         }
-        if (!authData?.user) throw new Error('AUTH_FAILED: No user returned');
 
-        userIdStr = authData.user.id;
-        userEmail = authData.user.email ?? null;
-
-        // Use RPC to bypass RLS (session might be null after signUp)
-        const { data: profile, error: profileError } = await supabase
-          .rpc('get_user_by_email', { p_email: userEmail });
-
-        if (profileError || !profile || profile.length === 0) {
-          throw new Error('USER_NOT_FOUND: Staff profile not found in this clinic');
-        }
-        const userProfile = profile[0];
+        const userProfile = users[0];
+        userIdStr = userProfile.id;
+        userEmail = userProfile.email;
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
-        userIdStr = userProfile.id;  // Use real ID from clinic_users
 
-        // Inject tenant_id into JWT for RLS (only if session exists)
-        if (authData?.session) {
-          await supabase.auth.updateUser({
-            data: { tenant_id: tenant.id, user_role: userRole, full_name: userFullName },
-          });
-          await supabase.auth.refreshSession();
-        }
+        // Store in localStorage like PIN login (no Supabase Auth session needed)
+        localStorage.setItem('pin_auth', JSON.stringify({
+          userId: userIdStr,
+          fullName: userFullName,
+          role: userRole,
+          tenantId: tenant.id,
+          timestamp: Date.now(),
+        }));
 
       // ─── 4. PIN Login ───
       } else if (pinCode) {
