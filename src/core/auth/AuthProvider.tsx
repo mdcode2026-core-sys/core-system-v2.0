@@ -35,7 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setState({ userId: parsed.userId, email: null, fullName: parsed.fullName, role: parsed.role as UserRole, tenantId: parsed.tenantId, isLoading: false, isAuthenticated: true });
               return;
             } else { localStorage.removeItem('pin_auth'); }
+    window.location.href = '/login';
           } catch { localStorage.removeItem('pin_auth'); }
+    window.location.href = '/login';
         }
         setState(s => ({ ...s, isLoading: false, isAuthenticated: false }));
       }
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('pin_auth');
+    window.location.href = '/login';
     setState({ userId: null, email: null, fullName: null, role: null, tenantId: null, isLoading: false, isAuthenticated: false });
   }, []);
 
