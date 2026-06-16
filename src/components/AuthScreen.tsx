@@ -36,8 +36,8 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      await login.mutateAsync({ email, password, licenseKey });
-      const userRole = login.data?.role || 'receptionist';
+      const result = await login.mutateAsync({ email, password, licenseKey });
+      const userRole = result?.role || 'receptionist';
       navigate(getRoleRoute(userRole));
     } catch (err: any) {
       setLocalError(err.message || "Invalid credentials or license");
@@ -57,8 +57,8 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      await login.mutateAsync({ pinCode: enteredPin, licenseKey });
-      const userRole = login.data?.role || 'receptionist';
+      const result = await login.mutateAsync({ pinCode: enteredPin, licenseKey });
+      const userRole = result?.role || 'receptionist';
       navigate(getRoleRoute(userRole));
     } catch (err: any) {
       setLocalError(err.message || "Invalid PIN");
