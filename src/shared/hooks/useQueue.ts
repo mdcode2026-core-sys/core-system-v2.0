@@ -10,7 +10,6 @@ const QUEUE_KEY = 'live-queue';
 export function useQueue() {
   const { tenantId: authTenantId } = useAuthContext();
   
-  // Fallback to localStorage if auth context doesn't have tenantId
   let tenantId = authTenantId;
   if (!tenantId) {
     try {
@@ -28,7 +27,7 @@ export function useQueue() {
 
   console.log('DEBUG: tenantId =', tenantId);
 
-  useQueueChannel(tenantId || "");
+  useQueueChannel(tenantId || '');
 
   const query = useQuery({
     queryKey: [QUEUE_KEY, tenantId],
@@ -47,15 +46,18 @@ export function useQueue() {
           wait_time_minutes,
           core_score_display,
           is_insured,
-          clinic_patients!inner(full_name),
-          clinic_users!inner(full_name),
+          clinic_patients(full_name),
+          clinic_users(full_name),
           clinic_procedures(name)
         `)
         .eq('tenant_id', tenantId)
         .in('session_status', ['waiting', 'in_consultation'])
         .order('actual_check_in', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('DEBUG: Supabase error:', error);
+        throw error;
+      }
       console.log('DEBUG: fetched', data?.length, 'rows');
 
       return (data || []).map((row: Record<string, unknown>) => {
@@ -75,20 +77,22 @@ export function useQueue() {
         if (waitMinutes >= 25) slaStatus = 'red';
         else if (waitMinutes >= 15) slaStatus = 'yellow';
 
-        const lockHolder = row.clinic_users as Record<string, string> | null;
+        const patients = row.clinic_patients as Record<string, string> | null;
+        const users = row.clinic_users as Record<string, string> | null;
+        const procedures = row.clinic_procedures as Record<string, string> | null;
 
         return {
           sessionId: row.id as string,
           patientId: row.patient_id as string,
-          patientName: (row.clinic_patients as Record<string, string>)?.full_name ?? 'Unknown',
+          patientName: patients?.full_name ?? 'Unknown',
           priority,
           slaStatus,
           waitMinutes,
           lockHolderId: row.lock_holder_id as string | null,
-          lockHolderName: lockHolder?.full_name ?? null,
+          lockHolderName: users?.full_name ?? null,
           roomId: null,
           doctorId: null,
-          procedureName: (row.clinic_procedures as Record<string, string>)?.name ?? null,
+          procedureName: procedures?.name ?? null,
           coreScoreDisplay: score,
         };
       });
