@@ -35,24 +35,7 @@ export function useQueue() {
       if (!tenantId) throw new Error('MISSING_TENANT_ID');
 
       const { data, error } = await supabase
-        .from('clinic_visit_sessions')
-        .select(`
-          id,
-          patient_id,
-          session_status,
-          actual_check_in,
-          actual_start,
-          lock_holder_id,
-          wait_time_minutes,
-          core_score_display,
-          is_insured,
-          clinic_patients(full_name),
-          clinic_users(full_name),
-          clinic_procedures(name)
-        `)
-        .eq('tenant_id', tenantId)
-        .in('session_status', ['waiting', 'in_consultation'])
-        .order('actual_check_in', { ascending: true });
+        .rpc('get_queue_for_tenant', { p_tenant_id: tenantId });
 
       if (error) {
         console.error('DEBUG: Supabase error:', error);
