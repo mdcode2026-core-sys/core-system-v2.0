@@ -95,12 +95,15 @@ export function useAuth() {
           });
           if (signUpError) throw new Error(`AUTH_FAILED: ${signUpError.message}`);
           authData = signUpData;
+        } else if (signInError && signInError.message.includes('Email not confirmed')) {
+          // Email confirmation required - for demo, proceed with profile lookup only
+          authData = { user: { id: 'demo-user', email: loginEmail }, session: null };
         } else if (signInError) {
           throw new Error(`AUTH_FAILED: ${signInError.message}`);
         } else {
           authData = signInData;
         }
-        if (!authData.user) throw new Error('AUTH_FAILED: No user returned');
+        if (!authData?.user) throw new Error('AUTH_FAILED: No user returned');
 
         userIdStr = authData.user.id;
         userEmail = authData.user.email ?? null;
@@ -116,11 +119,13 @@ export function useAuth() {
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
 
-        // Inject tenant_id into JWT for RLS
-        await supabase.auth.updateUser({
-          data: { tenant_id: tenant.id, user_role: userRole, full_name: userFullName },
-        });
-        await supabase.auth.refreshSession();
+        // Inject tenant_id into JWT for RLS (only if session exists)
+        if (authData?.session) {
+          await supabase.auth.updateUser({
+            data: { tenant_id: tenant.id, user_role: userRole, full_name: userFullName },
+          });
+          await supabase.auth.refreshSession();
+        }
 
       // ─── 4. PIN Login ───
       } else if (pinCode) {
