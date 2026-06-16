@@ -127,20 +127,7 @@ export function useAuth() {
         userRole = pinUser.role;
         userEmail = null;
 
-        // Create anonymous Supabase session for PIN user
-        const { error: anonError } = await supabase.auth.signInAnonymously();
-        if (anonError) throw new Error('Failed to create session: ' + anonError.message);
-        
-        // Update JWT claims with tenant info
-        await supabase.auth.updateUser({
-          data: {
-            tenant_id: tenant.id,
-            user_role: userRole,
-            full_name: userFullName,
-          }
-        });
-
-        localStorage.setItem('pin_auth', JSON.stringify({
+localStorage.setItem('pin_auth', JSON.stringify({
           userId: userIdStr, fullName: userFullName, role: userRole,
           tenantId: tenant.id, timestamp: Date.now(),
         }));
