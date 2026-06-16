@@ -9,15 +9,25 @@ export default function AuthScreen() {
   const { login, isPending } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  const [activeTab, setActiveTab] = useState("email");
+  const [activeTab, setActiveTab] = useState<"email" | "pin">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
-  const [pin, setPin] = useState(["", "", "", ""]);
+  const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [pinIndex, setPinIndex] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [shake, setShake] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const getRoleRoute = (role: string | null) => {
+    const routes: Record<string, string> = {
+      receptionist: '/reception',
+      doctor: '/doctor',
+      clinic_admin: '/admin',
+      super_admin: '/super-admin',
+    };
+    return routes[role || ''] || '/reception';
+  };
 
   const handleEmailLogin = useCallback(async () => {
     if (!email || !password || !licenseKey) {
@@ -26,10 +36,9 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      const result = await login.mutateAsync({ email, password, licenseKey });
-      const userRole = result?.role || 'receptionist';
-      const roleRoutes = { receptionist: '/reception', doctor: '/doctor', clinic_admin: '/admin', super_admin: '/super-admin' };
-      navigate(roleRoutes[userRole as keyof typeof roleRoutes] || '/reception');
+      await login.mutateAsync({ email, password, licenseKey });
+      const userRole = login.data?.role || 'receptionist';
+      navigate(getRoleRoute(userRole));
     } catch (err: any) {
       setLocalError(err.message || "Invalid credentials or license");
       setShake(true);
@@ -48,10 +57,9 @@ export default function AuthScreen() {
     }
     setLocalError(null);
     try {
-      const result = await login.mutateAsync({ pinCode: enteredPin, licenseKey });
-      const userRole = result?.role || 'receptionist';
-      const roleRoutes = { receptionist: '/reception', doctor: '/doctor', clinic_admin: '/admin', super_admin: '/super-admin' };
-      navigate(roleRoutes[userRole as keyof typeof roleRoutes] || '/reception');
+      await login.mutateAsync({ pinCode: enteredPin, licenseKey });
+      const userRole = login.data?.role || 'receptionist';
+      navigate(getRoleRoute(userRole));
     } catch (err: any) {
       setLocalError(err.message || "Invalid PIN");
       setShake(true);
@@ -127,7 +135,7 @@ export default function AuthScreen() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/70 flex items-center gap-2"><Mail className="w-4 h-4" /> Email Address</label>
-                  <input type="email" placeholder="doctor@clinic.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full h-12 md:h-14 text-base md:text-lg bg-white/5 border border-white/20 text-white placeholder:text-white/30 rounded-lg px-4 focus:outline-none focus:border-white/40" />
+                  <input type="email" placeholder="doctor@coresystem.io" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full h-12 md:h-14 text-base md:text-lg bg-white/5 border border-white/20 text-white placeholder:text-white/30 rounded-lg px-4 focus:outline-none focus:border-white/40" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/70 flex items-center gap-2"><Lock className="w-4 h-4" /> Password</label>
@@ -167,10 +175,7 @@ export default function AuthScreen() {
           <p className="text-xs text-white/30 mt-1">{isOnline ? "Connected to cloud" : "Working offline — sync when connected"}</p>
         </div>
       </div>
-      <style>{`
-        @keyframes shake { 0%,100% { transform: translateX(0); } 10%,30%,50%,70%,90% { transform: translateX(-6px); } 20%,40%,60%,80% { transform: translateX(6px); } }
-        .animate-shake { animation: shake 0.4s ease-in-out; }
-      `}</style>
+      <style>{`@keyframes shake { 0%,100% { transform: translateX(0); } 10%,30%,50%,70%,90% { transform: translateX(-6px); } 20%,40%,60%,80% { transform: translateX(6px); } } .animate-shake { animation: shake 0.4s ease-in-out; }`}</style>
     </div>
   );
 }
