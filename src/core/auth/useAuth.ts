@@ -118,6 +118,7 @@ export function useAuth() {
         const userProfile = profile[0];
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
+        userIdStr = userProfile.id;  // Use real ID from clinic_users
 
         // Inject tenant_id into JWT for RLS (only if session exists)
         if (authData?.session) {
