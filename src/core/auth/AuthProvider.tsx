@@ -181,3 +181,7 @@ export function useAuth() {
   }
   return context;
 }
+// ── Backward Compatibility Alias ───────────────────────────
+// These files import useAuthContext instead of useAuth
+export const useAuthContext = useAuth;
+
