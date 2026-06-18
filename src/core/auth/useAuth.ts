@@ -1,9 +1,20 @@
-// Real auth: Email + PIN + License validation + Device limiter
+// src/core/auth/useAuth.ts
+// Blueprint: src/core/auth/useAuth.ts
+// Purpose: Email + PIN + License validation + Device limiter
+// NOTE: Uses useAuth() from AuthProvider.tsx (NOT useAuthContext)
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '../../infrastructure/supabase/client';
-import { useAuthContext } from './AuthProvider';
+import { useAuth as useAuthFromProvider } from './AuthProvider';
 import { useTenantStore } from '../../shared/store/tenantStore';
+
+// ─── Types ───
+interface LoginCredentials {
+  email?: string;
+  password?: string;
+  pinCode?: string;
+  licenseKey: string;
+}
 
 // ─── Device Fingerprint ───
 async function generateDeviceFingerprint(): Promise<string> {
@@ -30,16 +41,8 @@ function detectDeviceType(): string {
   return 'reception_desktop';
 }
 
-// ─── Types ───
-interface LoginCredentials {
-  email?: string;
-  password?: string;
-  pinCode?: string;
-  licenseKey: string;
-}
-
 export function useAuth() {
-  const { isAuthenticated, isLoading, userId, email, fullName, role, tenantId, logout, setUser } = useAuthContext();
+  const { isAuthenticated, isLoading, userId, email, fullName, role, tenantId, logout } = useAuthFromProvider();
   const { setTenantId, setTenantName, setPrimaryColor, setSubscriptionTier } = useTenantStore();
 
   const login = useMutation({
@@ -50,7 +53,7 @@ export function useAuth() {
         throw new Error('LICENSE_REQUIRED: Clinic license key is required');
       }
 
-      // ─── 1. Validate License via RPC (bypasses RLS) ───
+      // ─── 1. Validate License via RPC ───
       const { data: tenantRows, error: tenantError } = await supabase
         .rpc('validate_license', { p_license_key: licenseKey });
 
@@ -81,7 +84,6 @@ export function useAuth() {
 
       // ─── 3. Email + Password Login ───
       if (loginEmail && password) {
-        // Validate email/password via RPC (bypass Supabase Auth rate limits)
         const { data: users, error: validateError } = await supabase
           .rpc('validate_email_password', { p_email: loginEmail, p_password: password });
 
@@ -95,7 +97,7 @@ export function useAuth() {
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
 
-        // Store in localStorage like PIN login (no Supabase Auth session needed)
+        // Store in localStorage
         localStorage.setItem('pin_auth', JSON.stringify({
           userId: userIdStr,
           fullName: userFullName,
@@ -104,16 +106,6 @@ export function useAuth() {
           timestamp: Date.now(),
         }));
 
-        // Update AuthContext
-        setUser({
-          userId: userIdStr,
-          email: userEmail,
-          fullName: userFullName,
-          role: userRole as any,
-          tenantId: tenant.id,
-        });
-
-        // Return user data for navigation
         return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
 
       // ─── 4. PIN Login ───
@@ -132,60 +124,16 @@ export function useAuth() {
         userRole = pinUser.role;
         userEmail = null;
 
-localStorage.setItem('pin_auth', JSON.stringify({
+        localStorage.setItem('pin_auth', JSON.stringify({
           userId: userIdStr, fullName: userFullName, role: userRole,
           tenantId: tenant.id, timestamp: Date.now(),
         }));
-
-        setUser({
-          userId: userIdStr,
-          email: null,
-          fullName: userFullName,
-          role: userRole as any,
-          tenantId: tenant.id,
-        });
 
         return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
 
       } else {
         throw new Error('CREDENTIALS_REQUIRED: Provide email+password or PIN');
       }
-
-      // ─── 5. Register Device (Email only) ───
-      if (loginEmail) {
-        const fingerprint = await generateDeviceFingerprint();
-        const { error: deviceError } = await supabase
-          .from('tenant_devices')
-          .upsert(
-            {
-              tenant_id: tenant.id,
-              device_fingerprint: fingerprint,
-              device_type: detectDeviceType(),
-              device_name: navigator.platform,
-              os_info: navigator.userAgent,
-              browser_info: navigator.userAgent,
-              is_active: true,
-              last_seen_at: new Date().toISOString(),
-            },
-            { onConflict: 'tenant_id,device_fingerprint' }
-          );
-        if (deviceError) console.error('Device registration failed:', deviceError);
-      }
-
-      // ─── 6. Update Tenant Store ───
-      setTenantId(tenant.id);
-      setTenantName(tenant.name);
-      setPrimaryColor((tenant.settings?.primaryColor || '#1B2A4A') || '#1B2A4A');
-      setSubscriptionTier(tenant.subscription_tier);
-
-      return {
-        userId: userIdStr,
-        email: userEmail,
-        fullName: userFullName,
-        role: userRole,
-        tenantId: tenant.id,
-        tenantName: tenant.name,
-      };
     },
   });
 
