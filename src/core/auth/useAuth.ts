@@ -5,7 +5,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '../../infrastructure/supabase/client';
 import { useAuth as useAuthFromProvider } from './AuthProvider';
-import { useTenantStore } from '../../shared/store/tenantStore';
 
 // ─── Types ───
 interface LoginCredentials {
@@ -16,8 +15,8 @@ interface LoginCredentials {
 }
 
 export function useAuth() {
-  const { isAuthenticated, isLoading, userId, email, fullName, role, tenantId, logout } = useAuthFromProvider();
-  const { setTenantId, setTenantName, setPrimaryColor, setSubscriptionTier } = useTenantStore();
+  const auth = useAuthFromProvider();
+  const { logout } = auth;
 
   const login = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
@@ -99,13 +98,13 @@ export function useAuth() {
   });
 
   return {
-    isAuthenticated,
-    isLoading,
-    userId,
-    email,
-    fullName,
-    role,
-    tenantId,
+    isAuthenticated: auth.isAuthenticated,
+    isLoading: auth.isLoading,
+    userId: auth.userId,
+    email: auth.email,
+    fullName: auth.fullName,
+    role: auth.role,
+    tenantId: auth.tenantId,
     logout,
     login,
     isPending: login.isPending,
