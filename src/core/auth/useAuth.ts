@@ -1,7 +1,6 @@
 // src/core/auth/useAuth.ts
 // Blueprint: src/core/auth/useAuth.ts
-// Purpose: Email + PIN + License validation + Device limiter
-// NOTE: Uses useAuth() from AuthProvider.tsx (NOT useAuthContext)
+// Purpose: Email + PIN + License validation
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '../../infrastructure/supabase/client';
@@ -14,31 +13,6 @@ interface LoginCredentials {
   password?: string;
   pinCode?: string;
   licenseKey: string;
-}
-
-// ─── Device Fingerprint ───
-async function generateDeviceFingerprint(): Promise<string> {
-  const components = [
-    navigator.userAgent,
-    navigator.language,
-    screen.colorDepth,
-    `${screen.width}x${screen.height}`,
-    new Date().getTimezoneOffset(),
-  ];
-  const hash = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(components.join('||'))
-  );
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-function detectDeviceType(): string {
-  const ua = navigator.userAgent;
-  if (/iPad|Tablet/i.test(ua)) return 'doctor_tablet';
-  if (/Mobile/i.test(ua)) return 'mobile';
-  return 'reception_desktop';
 }
 
 export function useAuth() {
@@ -65,24 +39,12 @@ export function useAuth() {
         throw new Error('TENANT_SUSPENDED: This clinic account is suspended');
       }
 
-      // ─── 2. Device Limiter ───
-      const { count: deviceCount, error: deviceError } = await supabase
-        .from('tenant_devices')
-        .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .eq('is_active', true);
-
-      if (deviceError) throw deviceError;
-      if (deviceCount && deviceCount >= tenant.max_devices) {
-        throw new Error(`DEVICE_LIMIT_EXCEEDED: Maximum ${tenant.max_devices} devices for ${tenant.subscription_tier} tier`);
-      }
-
       let userIdStr: string;
       let userEmail: string | null = null;
       let userFullName: string | null = null;
       let userRole: string | null = null;
 
-      // ─── 3. Email + Password Login ───
+      // ─── 2. Email + Password Login ───
       if (loginEmail && password) {
         const { data: users, error: validateError } = await supabase
           .rpc('validate_email_password', { p_email: loginEmail, p_password: password });
@@ -97,7 +59,6 @@ export function useAuth() {
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
 
-        // Store in localStorage
         localStorage.setItem('pin_auth', JSON.stringify({
           userId: userIdStr,
           fullName: userFullName,
@@ -108,7 +69,7 @@ export function useAuth() {
 
         return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
 
-      // ─── 4. PIN Login ───
+      // ─── 3. PIN Login ───
       } else if (pinCode) {
         const { data: pinUserRows, error: pinError } = await supabase
           .rpc('validate_pin', { p_tenant_id: tenant.id, p_pin_code: pinCode });
