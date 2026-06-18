@@ -1,3 +1,5 @@
 node_modules/
 .env
 .vercel
+supabase/.temp/
+dist/
