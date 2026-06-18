@@ -1,78 +1,183 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase, getCurrentUserWithClaims } from '../../infrastructure/supabase/client';
-import type { UserRole } from '../../shared/types/database';
+// ============================================================
+// AuthProvider.tsx — CORE SYSTEM v2.1
+// Fixed: JWT claims now stored in app_metadata (secure, server-readonly)
+// Previously: user_metadata (user-writable = security risk)
+// Blueprint Compliance: get_current_tenant_id() reads top-level JWT
+// ============================================================
 
-export interface AuthContextValue {
-  userId: string | null;
-  email: string | null;
-  fullName: string | null;
-  role: UserRole | null;
+import { createContext, useContext, useEffect, useState } from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/infrastructure/supabase/client";
+
+// ── Types ──────────────────────────────────────────────────
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
   tenantId: string | null;
+  userRole: string | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
-  logout: () => Promise<void>;
-  setUser: (user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => void;
+  isPinAuthenticated: boolean;
+  pinExpiry: number | null;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithPin: (pin: string) => Promise<{ success: boolean; role?: string; error?: string }>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ── Constants ──────────────────────────────────────────────
+const PIN_AUTH_KEY = "core_pin_auth";
+const PIN_EXPIRY_HOURS = 24;
+
+// ── Helper: Get tenant_id from app_metadata (secure path) ──
+function getTenantIdFromSession(session: Session | null): string | null {
+  if (!session) return null;
+  // Blueprint-compliant: read from app_metadata (server-controlled)
+  const appMeta = session.user.app_metadata;
+  return (appMeta?.tenant_id as string) || null;
+}
+
+// ── Helper: Get user_role from app_metadata (secure path) ──
+function getUserRoleFromSession(session: Session | null): string | null {
+  if (!session) return null;
+  const appMeta = session.user.app_metadata;
+  return (appMeta?.user_role as string) || null;
+}
+
+// ── Provider ───────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<AuthContextValue, 'logout' | 'setUser'>>({
-    userId: null, email: null, fullName: null, role: null, tenantId: null,
-    isLoading: true, isAuthenticated: false,
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPinAuthenticated, setIsPinAuthenticated] = useState(false);
+  const [pinExpiry, setPinExpiry] = useState<number | null>(null);
 
+  // ── Initialize auth state ────────────────────────────────
   useEffect(() => {
-    getCurrentUserWithClaims().then((user) => {
-      if (user?.tenantId) {
-        setState({ userId: user.id, email: user.email ?? null, fullName: user.fullName ?? null, role: user.role as UserRole, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
-      } else {
-        const pinAuth = localStorage.getItem('pin_auth');
-        if (pinAuth) {
-          try {
-            const parsed = JSON.parse(pinAuth);
-            if (parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-              setState({ userId: parsed.userId, email: null, fullName: parsed.fullName, role: parsed.role as UserRole, tenantId: parsed.tenantId, isLoading: false, isAuthenticated: true });
-              return;
-            } else { localStorage.removeItem('pin_auth'); }
-    window.location.href = '/login';
-          } catch { localStorage.removeItem('pin_auth'); }
-    window.location.href = '/login';
-        }
-        setState(s => ({ ...s, isLoading: false, isAuthenticated: false }));
+    const initAuth = async () => {
+      setIsLoading(true);
+      
+      // Get current session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
+        setTenantId(getTenantIdFromSession(currentSession));
+        setUserRole(getUserRoleFromSession(currentSession));
       }
-    });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const meta = session.user.user_metadata;
-        setState({ userId: session.user.id, email: session.user.email ?? null, fullName: meta?.full_name ?? null, role: meta?.user_role as UserRole, tenantId: meta?.tenant_id as string, isLoading: false, isAuthenticated: true });
-      } else {
-        if (!localStorage.getItem('pin_auth')) {
-          setState({ userId: null, email: null, fullName: null, role: null, tenantId: null, isLoading: false, isAuthenticated: false });
+      // Check PIN auth from localStorage
+      const pinData = localStorage.getItem(PIN_AUTH_KEY);
+      if (pinData) {
+        try {
+          const parsed = JSON.parse(pinData);
+          if (parsed.expiry && Date.now() < parsed.expiry) {
+            setIsPinAuthenticated(true);
+            setPinExpiry(parsed.expiry);
+          } else {
+            localStorage.removeItem(PIN_AUTH_KEY);
+          }
+        } catch {
+          localStorage.removeItem(PIN_AUTH_KEY);
         }
       }
-    });
 
-    return () => { listener.subscription.unsubscribe(); };
+      setIsLoading(false);
+    };
+
+    initAuth();
+
+    // ── Listen for auth changes ────────────────────────────
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setTenantId(getTenantIdFromSession(newSession));
+        setUserRole(getUserRoleFromSession(newSession));
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(async () => {
+  // ── Email/Password Sign In ───────────────────────────────
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
+  // ── PIN Sign In ──────────────────────────────────────────
+  const signInWithPin = async (pin: string): Promise<{ success: boolean; role?: string; error?: string }> => {
+    if (!tenantId) {
+      return { success: false, error: "No tenant context. Sign in with email first." };
+    }
+
+    // Call RPC with authenticated session (NOT anon)
+    const { data, error } = await supabase.rpc("validate_pin", {
+      p_tenant_id: tenantId,
+      p_pin: pin
+    });
+
+    if (error || !data) {
+      return { success: false, error: error?.message || "Invalid PIN" };
+    }
+
+    // Store PIN auth in localStorage with 24h expiry
+    const expiry = Date.now() + PIN_EXPIRY_HOURS * 60 * 60 * 1000;
+    localStorage.setItem(PIN_AUTH_KEY, JSON.stringify({
+      user_id: data.id,
+      role: data.role,
+      full_name: data.full_name,
+      expiry
+    }));
+
+    setIsPinAuthenticated(true);
+    setPinExpiry(expiry);
+    setUserRole(data.role);
+
+    return { success: true, role: data.role };
+  };
+
+  // ── Sign Out ─────────────────────────────────────────────
+  const signOut = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('pin_auth');
-    window.location.href = '/login';
-    setState({ userId: null, email: null, fullName: null, role: null, tenantId: null, isLoading: false, isAuthenticated: false });
-  }, []);
+    localStorage.removeItem(PIN_AUTH_KEY);
+    setUser(null);
+    setSession(null);
+    setTenantId(null);
+    setUserRole(null);
+    setIsPinAuthenticated(false);
+    setPinExpiry(null);
+  };
 
-  const setUser = useCallback((user: { userId: string; email: string | null; fullName: string | null; role: UserRole; tenantId: string }) => {
-    setState({ userId: user.userId, email: user.email, fullName: user.fullName ?? null, role: user.role, tenantId: user.tenantId, isLoading: false, isAuthenticated: true });
-  }, []);
-
-  return <AuthContext.Provider value={{ ...state, logout, setUser }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        tenantId,
+        userRole,
+        isLoading,
+        isPinAuthenticated,
+        pinExpiry,
+        signInWithEmail,
+        signInWithPin,
+        signOut
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuthContext() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used inside AuthProvider');
-  return ctx;
+// ── Hook ───────────────────────────────────────────────────
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
 }
