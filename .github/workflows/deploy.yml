@@ -1,4 +1,3 @@
-cat > .github/workflows/deploy.yml << 'EOF'
 name: Deploy to Supabase
 
 on:
@@ -12,7 +11,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     steps:
       - name: Checkout repo
@@ -27,8 +26,8 @@ jobs:
           if [ -z "$SUPABASE_PROJECT_ID" ]; then echo "❌ SUPABASE_PROJECT_ID missing"; exit 1; fi
           echo "✅ SUPABASE_PROJECT_ID exists"
           
-          if [ -z "$SUPABASE_DB_URL" ]; then echo "❌ SUPABASE_DB_URL missing"; exit 1; fi
-          echo "✅ SUPABASE_DB_URL exists"
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then echo "❌ SUPABASE_DB_PASSWORD missing"; exit 1; fi
+          echo "✅ SUPABASE_DB_PASSWORD exists"
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -40,28 +39,15 @@ jobs:
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
-      - name: Extract DB password from URL
-        id: extract_password
-        run: |
-          DB_PASSWORD=$(echo "$SUPABASE_DB_URL" | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-          
-          if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "[YOUR-PASSWORD]" ]; then
-            echo "❌ Invalid password extracted from URL"
-            exit 1
-          fi
-          
-          echo "✅ Password extracted successfully"
-          echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
-
       - name: Link to Supabase project
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$DB_PASSWORD"
+          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Deploy database migrations
         run: |
-          supabase db push --password "$DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
@@ -78,4 +64,3 @@ jobs:
           supabase functions list --project-ref "$SUPABASE_PROJECT_ID"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-EOF
