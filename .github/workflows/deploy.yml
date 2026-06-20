@@ -11,13 +11,12 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ── التحقق من Secrets ──
       - name: Verify Secrets exist
         run: |
           echo "Checking secrets..."
@@ -27,10 +26,9 @@ jobs:
           if [ -z "$SUPABASE_PROJECT_ID" ]; then echo "❌ SUPABASE_PROJECT_ID missing"; exit 1; fi
           echo "✅ SUPABASE_PROJECT_ID exists"
           
-          if [ -z "$SUPABASE_DB_URL" ]; then echo "❌ SUPABASE_DB_URL missing"; exit 1; fi
-          echo "✅ SUPABASE_DB_URL exists"
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then echo "❌ SUPABASE_DB_PASSWORD missing"; exit 1; fi
+          echo "✅ SUPABASE_DB_PASSWORD exists"
 
-      # ── تثبيت Supabase CLI ──
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -39,50 +37,29 @@ jobs:
       - name: Verify CLI version
         run: supabase --version
 
-      # ── تعطيل IPv6 ──
       - name: Disable IPv6
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
-      # ── استخراج كلمة المرور من URL ──
-      - name: Extract DB password from URL
-        id: extract_password
-        run: |
-          # postgresql://postgres:PASSWORD@db.xxx.supabase.co:5432/postgres
-          DB_PASSWORD=$(echo "$SUPABASE_DB_URL" | sed -n 's/.*:\/\/postgres:\([^@]*\)@.*/\1/p')
-          
-          if [ -z "$DB_PASSWORD" ]; then
-            echo "❌ Failed to extract password from SUPABASE_DB_URL"
-            echo "URL format: postgresql://postgres:PASSWORD@host..."
-            exit 1
-          fi
-          
-          echo "✅ Password extracted successfully"
-          echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
-
-      # ── ربط المشروع ──
       - name: Link to Supabase project
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$DB_PASSWORD"
+          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # ── نشر Migrations ──
       - name: Deploy database migrations
         run: |
-          supabase db push --password "$DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # ── نشر Edge Functions ──
       - name: Deploy Edge Functions
         run: |
           supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # ── التحقق ──
       - name: Verify deployment
         run: |
           echo "✅ Migrations deployed"
