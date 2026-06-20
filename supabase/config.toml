@@ -1,11 +1,12 @@
+[functions]
 [functions.auto-lock-release]
-schedule = "*/1 * * * *"
+verify_jwt = false
 
 [functions.leakage-detector]
-schedule = "0 * * * *"
+verify_jwt = false
 
 [functions.analytics-snapshot]
-schedule = "0 2 * * *"
+verify_jwt = false
 
 [functions.notification-processor]
-schedule = "*/5 * * * *"
+verify_jwt = false
