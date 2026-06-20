@@ -26,22 +26,25 @@ jobs:
         with:
           version: latest
 
-      - name: Login to Supabase
-        run: echo "$SUPABASE_ACCESS_TOKEN" | supabase login
-
       - name: Disable IPv6
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
       - name: Link to Supabase project
-        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+        run: |
+          export SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN
+          supabase link --project-ref $SUPABASE_PROJECT_ID
 
       - name: Deploy database migrations
-        run: supabase db push --db-url $SUPABASE_DB_URL
+        run: |
+          export SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN
+          supabase db push --db-url $SUPABASE_DB_URL
 
       - name: Deploy Edge Functions
-        run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
+        run: |
+          export SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN
+          supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
 
       - name: Verify deployment
         run: |
