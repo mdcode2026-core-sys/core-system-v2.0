@@ -26,6 +26,9 @@ jobs:
         with:
           version: latest
 
+      - name: Login to Supabase
+        run: echo "$SUPABASE_ACCESS_TOKEN" | supabase login
+
       - name: Disable IPv6
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
