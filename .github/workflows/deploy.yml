@@ -3,10 +3,6 @@ name: Deploy to Supabase
 on:
   push:
     branches: [main]
-    paths:
-      - 'supabase/migrations/**'
-      - 'supabase/functions/**'
-      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
