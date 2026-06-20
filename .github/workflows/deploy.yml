@@ -11,6 +11,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-22.04
+    if: github.repository_owner == 'mdcode2026-core-sys' && secrets.SUPABASE_ACCESS_TOKEN != ''
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
