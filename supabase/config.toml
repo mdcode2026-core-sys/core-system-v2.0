@@ -1,0 +1,11 @@
+[functions.auto-lock-release]
+schedule = "*/1 * * * *"
+
+[functions.leakage-detector]
+schedule = "0 * * * *"
+
+[functions.analytics-snapshot]
+schedule = "0 2 * * *"
+
+[functions.notification-processor]
+schedule = "*/5 * * * *"

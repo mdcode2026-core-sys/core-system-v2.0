@@ -7,7 +7,7 @@
 
 // ─── Providers ───
 export { AuthProvider, useAuthContext } from "./AuthProvider";
-export { PinAuthProvider, usePinAuth } from "./PinAuthProvider";
+// export { PinAuthProvider, usePinAuth } from "./pinAuth.types"; // TODO: Enable when verify_pin_hash RPC + pin_hash column exist
 
 // ─── Hooks ───
 export { useAuth } from "./useAuth";
@@ -40,4 +40,4 @@ export type {
   PinVerifyParams,
   EmployeeCodeVerifyParams,
   KioskRole,
-} from "./PinAuthProvider";
+} from "./pinAuth.types";
