@@ -36,12 +36,9 @@ export function DoctorPatientList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getTenantId = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const tid = session?.user?.user_metadata?.tenant_id || session?.user?.app_metadata?.tenant_id;
-      setTenantId(tid || null);
-    };
-    getTenantId();
+    // FIX: Read tenant_id from localStorage (set by useAuth.ts during login)
+    const tid = localStorage.getItem("tenant_id");
+    setTenantId(tid || null);
   }, []);
 
   useEffect(() => {
