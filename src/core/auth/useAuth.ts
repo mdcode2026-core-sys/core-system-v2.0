@@ -14,6 +14,9 @@ interface LoginCredentials {
   licenseKey: string;
 }
 
+// Match AuthProvider.tsx key
+const PIN_AUTH_KEY = "core_pin_auth";
+
 export function useAuth() {
   const auth = useAuthFromProvider();
   const { logout } = auth;
@@ -58,7 +61,7 @@ export function useAuth() {
         userFullName = userProfile.full_name;
         userRole = userProfile.role;
 
-        localStorage.setItem('pin_auth', JSON.stringify({
+        localStorage.setItem(PIN_AUTH_KEY, JSON.stringify({
           userId: userIdStr,
           fullName: userFullName,
           role: userRole,
@@ -84,9 +87,13 @@ export function useAuth() {
         userRole = pinUser.role;
         userEmail = null;
 
-        localStorage.setItem('pin_auth', JSON.stringify({
-          userId: userIdStr, fullName: userFullName, role: userRole,
-          tenantId: tenant.id, timestamp: Date.now(),
+        // FIX: Use same key as AuthProvider.tsx and include tenant_id
+        localStorage.setItem(PIN_AUTH_KEY, JSON.stringify({
+          user_id: userIdStr,
+          full_name: userFullName,
+          role: userRole,
+          tenant_id: tenant.id,
+          expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
         }));
 
         return { userId: userIdStr, email: userEmail, fullName: userFullName, role: userRole, tenantId: tenant.id };
