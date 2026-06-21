@@ -67,7 +67,7 @@ export function DoctorSessionView() {
         .select('doctor_notes')
         .eq('id', sessionId)
         .eq('tenant_id', tenantId)
-        .is('deleted_at', null)
+        .eq('is_abandoned', false)
         .single();
 
       if (sessionError) setError(sessionError.message);
@@ -77,7 +77,6 @@ export function DoctorSessionView() {
         .from('clinic_procedures')
         .select('id, name, base_price_subunits')
         .eq('tenant_id', tenantId)
-        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (procError) setError(procError.message);
@@ -110,7 +109,6 @@ export function DoctorSessionView() {
 
   const totalSubunits = invoiceItems.reduce((sum, item) => sum + (item.price_subunits * item.quantity), 0);
 
-  // Save notes + invoice (without closing)
   const handleSave = async () => {
     setSaving(true); setError(null); setSuccess(null);
     const { error: notesError } = await supabase
@@ -120,7 +118,6 @@ export function DoctorSessionView() {
       .eq('tenant_id', tenantId || '');
     if (notesError) { setError(notesError.message); setSaving(false); return; }
 
-    // Save invoice items to clinic_invoices (simplified - one invoice per session)
     if (invoiceItems.length > 0) {
       const { error: invError } = await supabase
         .from('clinic_invoices')
@@ -139,11 +136,9 @@ export function DoctorSessionView() {
     setTimeout(() => setSuccess(null), 3000);
   };
 
-  // Close session
   const handleCloseSession = async () => {
     setClosing(true); setError(null); setSuccess(null);
 
-    // Save first
     const { error: notesError } = await supabase
       .from('clinic_visit_sessions')
       .update({ doctor_notes: doctorNotes })
@@ -164,7 +159,6 @@ export function DoctorSessionView() {
       if (invError) { setError(invError.message); setClosing(false); return; }
     }
 
-    // Change status to completed
     const { error: closeError } = await supabase
       .from('clinic_visit_sessions')
       .update({ session_status: 'completed' })
@@ -172,7 +166,6 @@ export function DoctorSessionView() {
       .eq('tenant_id', tenantId || '');
     if (closeError) { setError(closeError.message); setClosing(false); return; }
 
-    // Trigger check_consultation_fee_gate will run automatically on update
     setSuccess('تم إغلاق الجلسة بنجاح');
     setClosing(false);
     setTimeout(() => navigate('/doctor/today'), 1500);
@@ -184,7 +177,6 @@ export function DoctorSessionView() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* Alerts */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600">
           <AlertCircle size={18} /><span>{error}</span>
@@ -196,10 +188,8 @@ export function DoctorSessionView() {
         </div>
       )}
 
-      {/* Decision Card */}
       <DecisionCard sessionId={sessionId} />
 
-      {/* Doctor Notes */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -218,7 +208,6 @@ export function DoctorSessionView() {
         </CardContent>
       </Card>
 
-      {/* Invoice */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -267,7 +256,6 @@ export function DoctorSessionView() {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <div className="flex gap-3">
         <button
           onClick={handleSave}

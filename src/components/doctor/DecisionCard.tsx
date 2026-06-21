@@ -10,7 +10,7 @@ interface SessionData {
   id: string;
   patient_id: string;
   core_score_display: number | null;
-  disc_profile: string | null;
+  patient_class: string | null;
   patient: {
     full_name: string;
     phone: string;
@@ -57,9 +57,9 @@ export function DecisionCard({ sessionId }: DecisionCardProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from('clinic_visit_sessions')
-        .select('id, patient_id, core_score_display, disc_profile, patient:clinic_patients(full_name, phone, date_of_birth)')
+        .select('id, patient_id, core_score_display, patient_class, patient:clinic_patients(full_name, phone, date_of_birth)')
         .eq('id', sessionId)
-        .is('deleted_at', null)
+        .eq('is_abandoned', false)
         .single();
       if (error) {
         setError(error.message);
@@ -85,9 +85,9 @@ export function DecisionCard({ sessionId }: DecisionCardProps) {
   const getDiscType = (profile: string | null): DiscType => {
     if (!profile) return 'emotional';
     const p = profile.toLowerCase();
-    if (p.includes('d')) return 'driver';
-    if (p.includes('i')) return 'influencer';
-    if (p.includes('c')) return 'analytical';
+    if (p.includes('driver') || p.includes('d')) return 'driver';
+    if (p.includes('influencer') || p.includes('i')) return 'influencer';
+    if (p.includes('analytical') || p.includes('c')) return 'analytical';
     return 'emotional';
   };
 
@@ -97,7 +97,7 @@ export function DecisionCard({ sessionId }: DecisionCardProps) {
 
   const score = session.core_score_display;
   const rec = getScoreRecommendation(score);
-  const discType = getDiscType(session.disc_profile);
+  const discType = getDiscType(session.patient_class);
   const disc = discConfig[discType];
   const DiscIcon = disc.icon;
 

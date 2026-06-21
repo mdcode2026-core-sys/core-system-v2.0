@@ -6,7 +6,7 @@ import { AlertCircle, Clock, User } from 'lucide-react';
 interface PatientSession {
   id: string;
   patient_id: string;
-  session_status: 'waiting' | 'scheduled' | 'in_progress' | 'completed';
+  session_status: string;
   core_score_display: number | null;
   scheduled_start: string;
   patient: { full_name: string; phone: string } | null;
@@ -56,7 +56,7 @@ export function DoctorPatientList() {
         .in('session_status', ['waiting', 'scheduled', 'in_progress'])
         .gte('scheduled_start', `${today}T00:00:00`)
         .lte('scheduled_start', `${today}T23:59:59`)
-        .is('deleted_at', null)
+        .eq('is_abandoned', false)
         .order('scheduled_start', { ascending: true });
       if (error) setError(error.message);
       else setSessions((data || []).map((s: any) => ({ ...s, patient: Array.isArray(s.patient) ? s.patient[0] : s.patient })));
