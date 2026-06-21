@@ -41,6 +41,20 @@ function getFromAppMeta(session: Session | null, key: string): string | null {
   return (session.user.app_metadata?.[key] as string) || null;
 }
 
+// ── Helper: Get tenant_id from localStorage (PIN auth fallback) ─
+function getTenantIdFromLocalStorage(): string | null {
+  const pinData = localStorage.getItem(PIN_AUTH_KEY);
+  if (pinData) {
+    try {
+      const parsed = JSON.parse(pinData);
+      return parsed.tenant_id || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 // ── Provider — Blueprint Compliant ───────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -53,7 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userId = user?.id || null;
   const email = user?.email || null;
   const fullName = getFromAppMeta(session, "full_name");
-  const tenantId = getFromAppMeta(session, "tenant_id");
+  // FIX: Read tenantId from app_metadata OR localStorage (PIN auth fallback)
+  const tenantId = getFromAppMeta(session, "tenant_id") || getTenantIdFromLocalStorage();
   const userRole = getFromAppMeta(session, "user_role");
   const isAuthenticated = !!user;
 
@@ -121,10 +136,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error || !data) return { success: false, error: error?.message || "Invalid PIN" };
 
     const expiry = Date.now() + PIN_EXPIRY_HOURS * 60 * 60 * 1000;
+    // FIX: Store tenant_id in localStorage for PIN auth
     localStorage.setItem(PIN_AUTH_KEY, JSON.stringify({
       user_id: data.id,
       role: data.role,
       full_name: data.full_name,
+      tenant_id: tenantId,  // ← ADDED: Store tenant_id for later retrieval
       expiry
     }));
 
@@ -142,6 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsPinAuthenticated(false);
     setPinExpiry(null);
   };
+
+  const logout = signOut;
 
   return (
     <AuthContext.Provider
@@ -161,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         signInWithPin,
         signOut,
-        logout: signOut,
+        logout,
         setUser,
       }}
     >
