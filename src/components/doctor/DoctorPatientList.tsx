@@ -36,8 +36,9 @@ export function DoctorPatientList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // FIX: Read tenant_id from localStorage (set by useAuth.ts during login)
-    const tid = localStorage.getItem("tenant_id");
+    // FIX: Read tenant_id from core_pin_auth (set by AuthProvider.tsx during login)
+    const pinData = localStorage.getItem("core_pin_auth");
+    const tid = pinData ? JSON.parse(pinData).tenant_id : null;
     setTenantId(tid || null);
   }, []);
 
