@@ -6,7 +6,7 @@ import { Stethoscope, Receipt, Trash2, Lock, AlertCircle, CheckCircle } from 'lu
 
 interface Procedure {
   id: string;
-  name: string;
+  procedure_name: string;
   base_price_subunits: number;
 }
 
@@ -75,9 +75,9 @@ export function DoctorSessionView() {
 
       const { data: procData, error: procError } = await supabase
         .from('clinic_procedures')
-        .select('id, name, base_price_subunits')
+        .select('id, procedure_name, base_price_subunits')
         .eq('tenant_id', tenantId)
-        .order('name', { ascending: true });
+        .order('procedure_name', { ascending: true });
 
       if (procError) setError(procError.message);
       else setProcedures(procData || []);
@@ -93,7 +93,7 @@ export function DoctorSessionView() {
     const exists = invoiceItems.find(i => i.procedure_id === proc.id);
     if (exists) { updateQuantity(exists.id, exists.quantity + 1); return; }
     setInvoiceItems(prev => [...prev, {
-      id: crypto.randomUUID(), procedure_id: proc.id, procedure_name: proc.name,
+      id: crypto.randomUUID(), procedure_id: proc.id, procedure_name: proc.procedure_name,
       price_subunits: proc.base_price_subunits, quantity: 1,
     }]);
   };
@@ -222,7 +222,7 @@ export function DoctorSessionView() {
             >
               <option value="" disabled>+ اختر إجراء...</option>
               {procedures.map(proc => (
-                <option key={proc.id} value={proc.id}>{proc.name} — {formatJOD(proc.base_price_subunits)}</option>
+                <option key={proc.id} value={proc.id}>{proc.procedure_name} — {formatJOD(proc.base_price_subunits)}</option>
               ))}
             </select>
           </div>
