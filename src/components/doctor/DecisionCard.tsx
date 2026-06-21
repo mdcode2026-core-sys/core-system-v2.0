@@ -13,7 +13,7 @@ interface SessionData {
   patient_class: string | null;
   patient: {
     full_name: string;
-    phone: string;
+    phone_primary: string;
     date_of_birth: string | null;
   } | null;
 }
@@ -57,7 +57,7 @@ export function DecisionCard({ sessionId }: DecisionCardProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from('clinic_visit_sessions')
-        .select('id, patient_id, core_score_display, patient_class, patient:clinic_patients(full_name, phone, date_of_birth)')
+        .select('id, patient_id, core_score_display, patient_class, patient:clinic_patients(full_name, phone_primary, date_of_birth)')
         .eq('id', sessionId)
         .eq('is_abandoned', false)
         .single();

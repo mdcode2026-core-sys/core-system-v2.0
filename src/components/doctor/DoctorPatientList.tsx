@@ -9,7 +9,7 @@ interface PatientSession {
   session_status: string;
   core_score_display: number | null;
   scheduled_start: string;
-  patient: { full_name: string; phone: string } | null;
+  patient: { full_name: string; phone_primary: string } | null;
 }
 
 function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
@@ -51,7 +51,7 @@ export function DoctorPatientList() {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('clinic_visit_sessions')
-        .select('id, patient_id, session_status, core_score_display, scheduled_start, patient:clinic_patients(full_name, phone)')
+        .select('id, patient_id, session_status, core_score_display, scheduled_start, patient:clinic_patients(full_name, phone_primary)')
         .eq('tenant_id', tenantId)
         .in('session_status', ['waiting', 'scheduled', 'in_progress'])
         .gte('scheduled_start', `${today}T00:00:00`)
@@ -97,7 +97,7 @@ export function DoctorPatientList() {
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center"><User className="text-primary" size={24} /></div>
                       <div>
                         <h3 className="font-semibold text-lg">{s.patient?.full_name || 'مريض غير معروف'}</h3>
-                        <p className="text-sm text-gray-500">{s.patient?.phone || '—'}</p>
+                        <p className="text-sm text-gray-500">{s.patient?.phone_primary || '—'}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge className={statusColor(s.session_status)}>{statusLabel(s.session_status)}</Badge>
                           <span className="text-xs text-gray-400">{new Date(s.scheduled_start).toLocaleTimeString('ar-JO', { hour: '2-digit', minute: '2-digit' })}</span>
